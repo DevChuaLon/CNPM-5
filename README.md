@@ -16,4 +16,4 @@ Dev: @taihalephivu + Youtube + gpt-4o mini + copilot + many other AI.
   acc: admin
   
   pass: 1
->>>>>>> cabe6f98ce25e4afcfa8befafe140a2d4676c7a3
+
