@@ -1,0 +1,33 @@
+body {
+    padding-top: 56px;
+}
+
+.footer {
+    background-color: #f8f9fa;
+    padding: 20px 0;
+    text-align: center;
+}
+
+.container {
+    margin-top: 20px;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.jumbotron {
+    background-color: #e9ecef;
+    padding: 2rem 1rem;
+    border-radius: 0.3rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Pod Bookings{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Pod Bookings</h2>
+    <ul>
+        {% for booking in bookings %}
+        <li>{{ booking.pod_name }} - {{ booking.user.username }} - {{ booking.booking_date }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

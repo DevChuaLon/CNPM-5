@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
@@ -33,5 +33,5 @@ def user_logout(request):
 
 @login_required
 def profile_detail(request):
-    profile = get_object_or_404(UserProfile, user=request.user)
+    user = get_object_or_404(UserProfile, user=request.user)
     return render(request, 'users/profile_detail.html', {'profile': profile})

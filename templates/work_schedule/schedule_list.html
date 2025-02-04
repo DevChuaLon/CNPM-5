@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Work Schedules{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Work Schedules</h2>
+    <ul>
+        {% for schedule in schedules %}
+        <li>{{ schedule.name }} - {{ schedule.date }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

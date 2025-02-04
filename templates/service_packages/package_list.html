@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Service Packages{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Service Packages</h2>
+    <ul>
+        {% for package in packages %}
+        <li>{{ package.name }} - {{ package.description }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

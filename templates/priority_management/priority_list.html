@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Priorities{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Priorities</h2>
+    <ul>
+        {% for priority in priorities %}
+        <li>{{ priority.name }} - Level: {{ priority.level }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

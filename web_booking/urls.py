@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse
+from django.shortcuts import render
+
 
 def home(request):
-    return HttpResponse("Welcome to the Home Page")
+    return render(request, 'home.html')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('django.contrib.auth.urls')), 
     path('additional_services/', include('additional_services.urls')),
     path('feedback/', include('feedback.urls')),
     path('notifications/', include('notifications.urls')),
