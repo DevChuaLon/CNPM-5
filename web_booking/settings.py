@@ -35,6 +35,9 @@ INSTALLED_APPS = [
     'users',
     'work_schedule',
 ]
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = 'users:login'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

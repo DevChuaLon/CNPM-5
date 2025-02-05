@@ -3,10 +3,16 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="jumbotron">
-    <h1 class="display-4">Welcome to Web Booking</h1>
-    <p class="lead">Đây chính là khởi đầu của 1 huyền thoại.</p>
-    <hr class="my-4">
-    <p>Hãy ghi nhớ ngày này 4-2-2025.</p>
+<div class="container mt-5">
+    <h1>Welcome to Web Booking</h1>
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
