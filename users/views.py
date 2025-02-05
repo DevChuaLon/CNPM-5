@@ -28,10 +28,11 @@ def user_login(request):
     return render(request, 'users/login.html', {'form': form})
 
 def user_logout(request):
-    logout(request)
-    return redirect('users:login')
+    if request.method == 'POST' or request.method == 'GET':
+        logout(request)
+        return redirect('users:login')
 
 @login_required
 def profile_detail(request):
-    user = get_object_or_404(UserProfile, user=request.user)
-    return render(request, 'users/profile_detail.html', {'profile': profile})
+    user_profile = get_object_or_404(UserProfile, user=request.user)
+    return render(request, 'users/profile_detail.html', {'user_profile': user_profile})
