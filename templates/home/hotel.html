@@ -1,82 +1,107 @@
-{% extends 'home/base.html' %}
-{% block title %}
-{{hotel.hotel_name}}
-{% endblock title %}
-
-{% block css %}
+{% extends 'home/base.html' %} {% block title %} {{hotel.hotel_name}} {%
+endblock title %} {% block css %}
 <style>
-    .list-group {
-        list-style-type: disc !important;
-    }
+  .list-group {
+    list-style-type: disc !important;
+  }
 </style>
-{% endblock css %}
-
-
-
-{% block body %}
+{% endblock css %} {% block content %}
 <div class="container mt-4">
-    <div class="card">
-        <div class="card-body">
-            <div class="row">
-                <!-- Hotel Images -->
-                <div class="col-md-6">
-                    <div id="hotelCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            {% for image in hotel.hotelimages_set.all %}
-                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                <img src="{{ image.image.url }}" class="d-block w-100" alt="Hotel Image" style="height: 400px; object-fit: cover;">
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#hotelCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon"></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#hotelCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon"></span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Hotel Details -->
-                <div class="col-md-6">
-                    <h2>{{ hotel.hotel_name }}</h2>
-                    <p class="text-muted">{{ hotel.description }}</p>
-                    <h4 class="text-primary">{{ hotel.hotel_price|floatformat:0 }}đ/đêm</h4>
-                    <p><strong>Số phòng còn trống:</strong> {{ hotel.room_count }}</p>
-                    
-                    <h5 class="mt-4">Tiện nghi:</h5>
-                    <div class="d-flex flex-wrap gap-2 mb-4">
-                        {% for amenity in hotel.amenities.all %}
-                        <span class="badge bg-secondary">{{ amenity.amenity_name }}</span>
-                        {% endfor %}
-                    </div>
-
-                    {% if user.is_authenticated %}
-                    <form method="POST" action="{% url 'book_hotel' hotel.uid %}">
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Check-in</label>
-                                <input type="date" name="start_date" class="form-control" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Check-out</label>
-                                <input type="date" name="end_date" class="form-control" required>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Đặt phòng</button>
-                            </div>
-                        </div>
-                    </form>
-                    {% else %}
-                    <div class="alert alert-info">
-                        Vui lòng <a href="{% url 'signin' %}">đăng nhập</a> để đặt phòng
-                    </div>
-                    {% endif %}
-                </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <!-- Hotel Images -->
+        <div class="col-md-6">
+          <div
+            id="hotelCarousel"
+            class="carousel slide"
+            data-bs-ride="carousel"
+          >
+            <div class="carousel-inner">
+              {% for image in hotel.hotelimages_set.all %}
+              <div
+                class="carousel-item {% if forloop.first %}active{% endif %}"
+              >
+                <img
+                  src="{{ image.image.url }}"
+                  class="d-block w-100"
+                  alt="Hotel Image"
+                  style="height: 400px; object-fit: cover"
+                />
+              </div>
+              {% endfor %}
             </div>
+            <button
+              class="carousel-control-prev"
+              type="button"
+              data-bs-target="#hotelCarousel"
+              data-bs-slide="prev"
+            >
+              <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button
+              class="carousel-control-next"
+              type="button"
+              data-bs-target="#hotelCarousel"
+              data-bs-slide="next"
+            >
+              <span class="carousel-control-next-icon"></span>
+            </button>
+          </div>
         </div>
+
+        <!-- Hotel Details -->
+        <div class="col-md-6">
+          <h2>{{ hotel.hotel_name }}</h2>
+          <p class="text-muted">{{ hotel.description }}</p>
+          <h4 class="text-primary">
+            {{ hotel.hotel_price|floatformat:0 }}đ/đêm
+          </h4>
+          <p><strong>Số phòng còn trống:</strong> {{ hotel.room_count }}</p>
+
+          <h5 class="mt-4">Tiện nghi:</h5>
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            {% for amenity in hotel.amenities.all %}
+            <span class="badge bg-secondary">{{ amenity.amenity_name }}</span>
+            {% endfor %}
+          </div>
+
+          {% if user.is_authenticated %}
+          <form method="POST" action="{% url 'book_hotel' hotel.uid %}">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Check-in</label>
+                <input
+                  type="date"
+                  name="start_date"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Check-out</label>
+                <input
+                  type="date"
+                  name="end_date"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">Đặt phòng</button>
+              </div>
+            </div>
+          </form>
+          {% else %}
+          <div class="alert alert-info">
+            Vui lòng <a href="{% url 'signin' %}">đăng nhập</a> để đặt phòng
+          </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
-{% endblock body %}
+{% endblock content %}
