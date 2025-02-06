@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import Hotel, HotelBooking, Amenities, HotelImages
+from .models import *
 
 # Đăng ký các models với admin site
+admin.site.register(UserProfile)
 admin.site.register(Hotel)
 admin.site.register(HotelBooking)
 admin.site.register(Amenities)
