@@ -74,9 +74,6 @@ def index(request):
         hotels = Hotel.objects.all().order_by('hotel_price')
         amenities = Amenities.objects.all()
         
-        # Debug: In ra số lượng khách sạn
-        print(f"Tổng số khách sạn: {hotels.count()}")
-        print(f"Tổng số tiện nghi: {amenities.count()}")
         
         # Xử lý tìm kiếm và lọc
         selected_amenities = request.GET.getlist('selectAmenity')
