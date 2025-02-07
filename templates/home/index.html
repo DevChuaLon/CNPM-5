@@ -241,7 +241,7 @@ Welcome To WORK CHILL.com
                                 <p class="card-text">{{ pod.description|truncatewords:20 }}</p>
                                 <p class="card-text">
                                     <strong>Giá:</strong> 
-                                    <span class="text-primary">{{ pod.pod_price|floatformat:0 }}000VNĐ/đêm</span>
+                                    <span class="text-primary">{{ pod.pod_price|floatformat:0 }}000VNĐ/h</span>
                                 </p>
                                 <p class="card-text">
                                     <small class="text-muted">Còn {{ pod.room_count }} phòng trống</small>
@@ -301,7 +301,6 @@ Welcome To WORK CHILL.com
 
     <!-- FOOTER -->
     <footer class="container mt-4 ">
-        <p class="float-end"><a href="#">Lên đầu trang</a></p>
         <p>© 2025 WORK CHILL, Inc.</p>
     </footer>
 </main>

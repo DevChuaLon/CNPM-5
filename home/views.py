@@ -50,16 +50,38 @@ def signup(request):
         
     if request.method == 'POST':
         username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
         
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Tên đăng nhập đã tồn tại')
+        # Kiểm tra xác nhận mật khẩu
+        if password != confirm_password:
+            messages.error(request, 'Mật khẩu xác nhận không khớp!')
             return render(request, 'home/signup.html')
-        
-        user = User.objects.create_user(username=username, password=password)
-        messages.success(request, 'Đăng ký thành công')
-        return redirect('signin')
-    
+            
+        # Kiểm tra username đã tồn tại
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Tên đăng nhập đã tồn tại!')
+            return render(request, 'home/signup.html')
+            
+        # Kiểm tra email đã tồn tại
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email đã được sử dụng!')
+            return render(request, 'home/signup.html')
+            
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            messages.success(request, 'Đăng ký thành công! Vui lòng đăng nhập.')
+            return redirect('signin')
+            
+        except Exception as e:
+            messages.error(request, 'Đã xảy ra lỗi khi tạo tài khoản!')
+            return render(request, 'home/signup.html')
+            
     return render(request, 'home/signup.html')
 
 def signout(request):
