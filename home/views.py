@@ -74,7 +74,6 @@ def index(request):
         hotels = Hotel.objects.all().order_by('hotel_price')
         amenities = Amenities.objects.all()
         
-        
         # Xử lý tìm kiếm và lọc
         selected_amenities = request.GET.getlist('selectAmenity')
         sort_by = request.GET.get('sortSelect')
@@ -84,23 +83,19 @@ def index(request):
         
         if selected_amenities:
             hotels = hotels.filter(amenities__amenity_name__in=selected_amenities).distinct()
-            print(f"Lọc theo tiện nghi: {selected_amenities}")
-            print(f"Số khách sạn sau khi lọc: {hotels.count()}")
         
         if search:
             hotels = hotels.filter(
                 Q(hotel_name__icontains=search) |
                 Q(description__icontains=search)
             )
-            print(f"Tìm kiếm với từ khóa: {search}")
-            print(f"Số khách sạn sau khi tìm: {hotels.count()}")
         
         if sort_by == 'low_to_high':
             hotels = hotels.order_by('hotel_price')
         elif sort_by == 'high_to_low':
             hotels = hotels.order_by('-hotel_price')
             
-        # Phân trang
+        # Thêm phân trang
         paginator = Paginator(hotels, 6)  # 6 khách sạn mỗi trang
         page = request.GET.get('page', 1)
         hotels = paginator.get_page(page)
@@ -119,7 +114,6 @@ def index(request):
         return render(request, 'home/index.html', context)
         
     except Exception as e:
-        print(f"Lỗi: {str(e)}")  # Debug log
         messages.error(request, 'Đã xảy ra lỗi khi tải trang chủ')
         return render(request, 'home/index.html', {
             'today': date.today().strftime('%Y-%m-%d')

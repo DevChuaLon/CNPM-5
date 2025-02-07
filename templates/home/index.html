@@ -83,6 +83,30 @@
         font-size: 0.8rem;
         margin: 2px;
     }
+
+    .btn-light {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s;
+    }
+
+    .btn-light:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.1);
+    }
+
+    .ms-n3 {
+        margin-left: -1rem !important;
+    }
+
+    .me-n3 {
+        margin-right: -1rem !important;
+    }
 </style>
 
 {% endblock css %}
@@ -252,41 +276,25 @@ Welcome To hotel.com
                 {% endif %}
             </div>
 
-            {% if hotels.has_other_pages %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if hotels.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1">&laquo; Đầu</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ hotels.previous_page_number }}">Trước</a>
-                    </li>
-                    {% endif %}
+            <div class="d-flex justify-content-center align-items-center mt-4">
+                {% if hotels.has_previous %}
+                <a href="?page={{ hotels.previous_page_number }}" 
+                   class="btn btn-light rounded-circle me-3">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
 
-                    {% for num in hotels.paginator.page_range %}
-                        {% if hotels.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > hotels.number|add:'-3' and num < hotels.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
+                <span class="text-muted">
+                    Trang {{ hotels.number }} / {{ hotels.paginator.num_pages }}
+                </span>
 
-                    {% if hotels.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ hotels.next_page_number }}">Tiếp</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ hotels.paginator.num_pages }}">Cuối &raquo;</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
+                {% if hotels.has_next %}
+                <a href="?page={{ hotels.next_page_number }}" 
+                   class="btn btn-light rounded-circle ms-3">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
         </div>
     </main>
 
