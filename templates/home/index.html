@@ -198,19 +198,16 @@ Welcome To hotel.com
                 </div>
             </div>
         </div>
-
         <div class="container mt-4" id="hotel-list">
             <div class="row">
                 {% if hotels %}
                     {% for hotel in hotels %}
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card h-100 hotel-card">
-                            {% if hotel.hotelimages_set.first %}
-                            <img src="{{ hotel.hotelimages_set.first.image.url }}" 
-                                 class="card-img-top" alt="{{ hotel.hotel_name }}"
-                                 style="height: 200px; object-fit: cover;">
+                            {% if hotel.hotel_images.first %}
+                            <img src="{{ hotel.hotel_images.first.images.url }}" class="card-img-top" alt="{{ hotel.hotel_name }}">
                             {% else %}
-                            <img src="https://unsplash.it/1400/500/?hotel" 
+                            <img src="https://placehold.co/600x400?text=No+Image" 
                                  class="card-img-top" alt="{{ hotel.hotel_name }}"
                                  style="height: 200px; object-fit: cover;">
                             {% endif %}
