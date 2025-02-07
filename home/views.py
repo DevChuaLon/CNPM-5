@@ -15,8 +15,8 @@ def check_booking(uid, room_count, start_date, end_date):
         if isinstance(end_date, str):
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         
-        qs = HotelBooking.objects.filter(
-            hotel__uid=uid,
+        qs = PodBooking.objects.filter(
+            pod__uid=uid,
             status='active'
         ).filter(
             Q(start_date__lte=end_date) & Q(end_date__gte=start_date)
@@ -71,7 +71,7 @@ def signout(request):
 def index(request):
     try:
         # Lấy tất cả khách sạn và sắp xếp theo giá
-        hotels = Hotel.objects.all().order_by('hotel_price')
+        pods = Pod.objects.all().order_by('pod_price')
         amenities = Amenities.objects.all()
         
         # Xử lý tìm kiếm và lọc
@@ -82,26 +82,26 @@ def index(request):
         end_date = request.GET.get('endDate')
         
         if selected_amenities:
-            hotels = hotels.filter(amenities__amenity_name__in=selected_amenities).distinct()
+            pods = pods.filter(amenities__amenity_name__in=selected_amenities).distinct()
         
         if search:
-            hotels = hotels.filter(
-                Q(hotel_name__icontains=search) |
+            pods = pods.filter(
+                Q(pod_name__icontains=search) |
                 Q(description__icontains=search)
             )
         
         if sort_by == 'low_to_high':
-            hotels = hotels.order_by('hotel_price')
+            pods = pods.order_by('pod_price')
         elif sort_by == 'high_to_low':
-            hotels = hotels.order_by('-hotel_price')
+            pods = pods.order_by('-pod_price')
             
         # Thêm phân trang
-        paginator = Paginator(hotels, 6)  # 6 khách sạn mỗi trang
+        paginator = Paginator(pods, 6)  # 6 khách sạn mỗi trang
         page = request.GET.get('page', 1)
-        hotels = paginator.get_page(page)
+        pods = paginator.get_page(page)
         
         context = {
-            'hotels': hotels,
+            'pods': pods,
             'amenities': amenities,
             'selected_amenities': selected_amenities,
             'sort_by': sort_by,
@@ -123,12 +123,12 @@ def index(request):
 def user_profile(request):
     try:
         user = request.user
-        recent_bookings = HotelBooking.objects.filter(
+        recent_bookings = PodBooking.objects.filter(
             user=user,
-        ).select_related('hotel').order_by('-created_at')[:5]
+        ).select_related('pod').order_by('-created_at')[:5]
         
-        total_bookings = HotelBooking.objects.filter(user=user).count()
-        active_bookings = HotelBooking.objects.filter(user=user, status='active').count()
+        total_bookings = PodBooking.objects.filter(user=user).count()
+        active_bookings = PodBooking.objects.filter(user=user, status='active').count()
         
         context = {
             'user': user,
@@ -147,9 +147,9 @@ def user_profile(request):
 @login_required
 def booking_history(request):
     try:
-        bookings = HotelBooking.objects.filter(
+        bookings = PodBooking.objects.filter(
             user=request.user
-        ).select_related('hotel').order_by('-created_at')
+        ).select_related('pod').order_by('-created_at')
         
         status = request.GET.get('status')
         if status:
@@ -163,7 +163,7 @@ def booking_history(request):
             'completed_bookings': bookings.filter(status='completed').count(),
             'today': date.today().strftime('%Y-%m-%d'),
             'current_status': status,
-            'status_choices': HotelBooking._meta.get_field('status').choices
+            'status_choices': PodBooking._meta.get_field('status').choices
         }
         
         return render(request, 'home/booking_history.html', context)
@@ -175,7 +175,7 @@ def booking_history(request):
 @login_required
 def cancel_booking(request, booking_id):
     try:
-        booking = get_object_or_404(HotelBooking, uid=booking_id, user=request.user)
+        booking = get_object_or_404(PodBooking, uid=booking_id, user=request.user)
         today = date.today()
         
         if booking.status != 'active':
@@ -193,9 +193,9 @@ def cancel_booking(request, booking_id):
         messages.error(request, 'Đã xảy ra lỗi khi hủy đặt phòng')
         return redirect('booking_history')
 
-def get_hotel(request, uid):
+def get_pod(request, uid):
     try:
-        hotel = Hotel.objects.get(uid=uid)
+        pod = Pod.objects.get(uid=uid)
         today = date.today().strftime('%Y-%m-%d')
         
         if request.method == 'POST':
@@ -206,9 +206,9 @@ def get_hotel(request, uid):
             end_date = request.POST.get('endDate')
             
             if start_date and end_date:
-                if check_booking(uid, hotel.room_count, start_date, end_date):
-                    HotelBooking.objects.create(
-                        hotel=hotel,
+                if check_booking(uid, pod.room_count, start_date, end_date):
+                    PodBooking.objects.create(
+                        pod=pod,
                         user=request.user,
                         start_date=start_date,
                         end_date=end_date,
@@ -223,26 +223,26 @@ def get_hotel(request, uid):
                 messages.error(request, 'Vui lòng chọn ngày check-in và check-out')
         
         context = {
-            'hotel': hotel,
+            'pod': pod,
             'today': today
         }
-        return render(request, 'home/hotel.html', context)
+        return render(request, 'home/pod.html', context)
         
-    except Hotel.DoesNotExist:
+    except Pod.DoesNotExist:
         messages.error(request, 'Không tìm thấy khách sạn')
         return redirect('index')
 
-def hotel_detail(request, hotel_id):
+def pod_detail(request, pod_id):
     try:
-        hotel = Hotel.objects.get(id=hotel_id)
+        pod = Pod.objects.get(id=pod_id)
         # Debug: In ra đường dẫn ảnh
-        for image in hotel.hotel_images.all():
+        for image in pod.pod_images.all():
             print(f"Image URL: {image.images.url}")
             print(f"Image Path: {image.images.path}")
         context = {
-            'hotel': hotel,
-            'hotel_images': hotel.hotel_images.all()  # Lấy tất cả hình ảnh của khách sạn
+            'pod': pod,
+            'pod_images': pod.pod_images.all()  # Lấy tất cả hình ảnh của khách sạn
         }
-        return render(request, 'home/hotel.html', context)
-    except Hotel.DoesNotExist:
+        return render(request, 'home/pod.html', context)
+    except Pod.DoesNotExist:
         return redirect('home')

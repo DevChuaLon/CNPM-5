@@ -1,4 +1,4 @@
-"""hotel URL Configuration
+"""pod URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.0/topics/http/urls/
@@ -16,7 +16,7 @@ Including another URLconf
 from django.urls import path
 from . views import *
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from hotelProject import settings
+from podProject import settings
 from django.conf.urls.static import static
 from . import views
 
@@ -26,7 +26,7 @@ urlpatterns = [
     path('signin/', signin, name='signin'),
     path('signup/', signup, name='signup'),
     path('signout/', signout, name='signout'),
-    path('hotel/<uid>/', get_hotel, name='get_hotel'),
+    path('pod/<uid>/', get_pod, name='get_pod'),
     path('profile/', user_profile, name='user_profile'),
     path('bookings/', booking_history, name='booking_history'),
     path('booking/cancel/<uuid:booking_id>/', cancel_booking, name='cancel_booking'),

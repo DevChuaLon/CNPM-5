@@ -28,22 +28,22 @@ class Amenities(BaseModel):
     def __str__(self) -> str:
         return self.amenity_name
 
-class Hotel(BaseModel):
-    hotel_name = models.CharField(max_length=100)
-    hotel_price = models.IntegerField()
+class Pod(BaseModel):
+    pod_name = models.CharField(max_length=100)
+    pod_price = models.IntegerField()
     description = models.TextField()
     amenities = models.ManyToManyField(Amenities)
     room_count = models.IntegerField(default=10)
     
     def __str__(self) -> str:
-        return self.hotel_name
+        return self.pod_name
 
-class HotelImages(BaseModel):
-    hotel = models.ForeignKey(Hotel, related_name='hotel_images', on_delete=models.CASCADE)
-    images = models.ImageField(upload_to='hotels')
+class PodImages(BaseModel):
+    pod = models.ForeignKey(Pod, related_name='pod_images', on_delete=models.CASCADE)
+    images = models.ImageField(upload_to='pods')
 
-class HotelBooking(BaseModel):
-    hotel = models.ForeignKey(Hotel, related_name="hotel_bookings", on_delete=models.CASCADE)
+class PodBooking(BaseModel):
+    pod = models.ForeignKey(Pod, related_name="pod_bookings", on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name="user_bookings", on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
@@ -58,4 +58,4 @@ class HotelBooking(BaseModel):
     ), default='active')
     
     def __str__(self) -> str:
-        return f'{self.hotel.hotel_name} - {self.user.username}'
+        return f'{self.pod.pod_name} - {self.user.username}'

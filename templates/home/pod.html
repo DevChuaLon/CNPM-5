@@ -1,7 +1,7 @@
 {% extends 'home/base.html' %}
 
 {% block title %}
-{{ hotel.hotel_name }}
+{{ pod.pod_name }}
 {% endblock title %}
 
 {% block css %}
@@ -25,38 +25,38 @@
     <div class="card-body">
       <div class="row">
         <div class="col-md-4">
-          <div id="hotelCarousel" class="carousel slide" data-bs-ride="carousel">
+          <div id="podCarousel" class="carousel slide" data-bs-ride="carousel">
             <div class="carousel-inner">
-              {% if hotel.hotel_images.all %}
-                {% for image in hotel.hotel_images.all %}
+              {% if pod.pod_images.all %}
+                {% for image in pod.pod_images.all %}
                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                  <img src="{{ image.images.url }}" class="d-block w-100" alt="{{ hotel.hotel_name }}">
+                  <img src="{{ image.images.url }}" class="d-block w-100" alt="{{ pod.pod_name }}">
                 </div>
                 {% endfor %}
               {% endif %}
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#hotelCarousel" data-bs-slide="prev">
+            <button class="carousel-control-prev" type="button" data-bs-target="#podCarousel" data-bs-slide="prev">
               <span class="carousel-control-prev-icon" aria-hidden="true"></span>
             </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#hotelCarousel" data-bs-slide="next">
+            <button class="carousel-control-next" type="button" data-bs-target="#podCarousel" data-bs-slide="next">
               <span class="carousel-control-next-icon" aria-hidden="true"></span>
             </button>
           </div>
         </div>
 
         <div class="col-md-8">
-          <h2>{{ hotel.hotel_name }}</h2>
+          <h2>{{ pod.pod_name }}</h2>
           <div class="star-rating mb-2">
             {% for i in "12345"|make_list %}
-            <i class="fas fa-star {% if forloop.counter <= hotel.rating %}text-warning{% else %}text-secondary{% endif %}"></i>
+            <i class="fas fa-star {% if forloop.counter <= pod.rating %}text-warning{% else %}text-secondary{% endif %}"></i>
             {% endfor %}
           </div>
-          <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ hotel.hotel_address }}</p>
-          <p>{{ hotel.hotel_description }}</p>
+          <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ pod.pod_address }}</p>
+          <p>{{ pod.pod_description }}</p>
           
-          <h4 class="mt-4">Tiện ích:</h4>
+          <h4 class="mt-4">Tiện nghi:</h4>
           <div class="row">
-            {% for amenity in hotel.amenities.all %}
+            {% for amenity in pod.amenities.all %}
             <div class="col-md-4 mb-2">
               <div class="d-flex align-items-center">
                 <i class="fas {{ amenity.icon }} amenity-icon"></i>
@@ -97,7 +97,7 @@
               </select>
             </div>
 
-            {% for room in hotel.room_set.all %}
+            {% for room in pod.room_set.all %}
             <div class="card mb-3 room-card" data-room-type="{{ room.room_type }}">
               <div class="card-body">
                 <div class="row">
