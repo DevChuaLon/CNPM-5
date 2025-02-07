@@ -1,0 +1,171 @@
+{% extends 'home/base.html' %}
+
+{% block title %}
+{{ pod.pod_name }}
+{% endblock title %}
+
+{% block css %}
+<style>
+  .amenity-icon {
+    width: 24px;
+    margin-right: 10px;
+  }
+  .star-rating {
+    color: #ffc107;
+  }
+  .room-filter {
+    margin-bottom: 20px;
+  }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <div id="podCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+              {% if pod.pod_images.all %}
+                {% for image in pod.pod_images.all %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                  <img src="{{ image.images.url }}" class="d-block w-100" alt="{{ pod.pod_name }}">
+                </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#podCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#podCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-md-8">
+          <h2>{{ pod.pod_name }}</h2>
+          <div class="star-rating mb-2">
+            {% for i in "12345"|make_list %}
+            <i class="fas fa-star {% if forloop.counter <= pod.rating %}text-warning{% else %}text-secondary{% endif %}"></i>
+            {% endfor %}
+          </div>
+          <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ pod.pod_address }}</p>
+          <p>{{ pod.pod_description }}</p>
+          
+          <h4 class="mt-4">Tiện nghi:</h4>
+          <div class="row">
+            {% for amenity in pod.amenities.all %}
+            <div class="col-md-4 mb-2">
+              <div class="d-flex align-items-center">
+                <i class="fas {{ amenity.icon }} amenity-icon"></i>
+                <span>{{ amenity.name }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="mt-4">
+            <h4>Đặt phòng:</h4>
+            <form method="POST" class="booking-form">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="startDate" class="form-label">Ngày nhận phòng</label>
+                  <input type="date" class="form-control" id="startDate" name="startDate" 
+                         min="{{ today }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="endDate" class="form-label">Ngày trả phòng</label>
+                  <input type="date" class="form-control" id="endDate" name="endDate" 
+                         min="{{ today }}" required>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Đặt phòng ngay</button>
+            </form>
+          </div>
+
+          <div class="mt-4">
+            <h4>Phòng trống:</h4>
+            <div class="room-filter">
+              <select class="form-select" id="roomTypeFilter">
+                <option value="">Tất cả loại phòng</option>
+                {% for room_type in room_types %}
+                <option value="{{ room_type }}">{{ room_type }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            {% for room in pod.room_set.all %}
+            <div class="card mb-3 room-card" data-room-type="{{ room.room_type }}">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4">
+                    <img src="{{ room.image.url }}" class="img-fluid rounded" alt="Room Image">
+                  </div>
+                  <div class="col-md-8">
+                    <h5 class="card-title">{{ room.room_type }}</h5>
+                    <p class="card-text text-success fw-bold">{{ room.price|floatformat:2 }} VNĐ/đêm</p>
+                    <p class="card-text">{{ room.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="room-amenities">
+                        {% for amenity in room.amenities.all %}
+                        <span class="badge bg-light text-dark me-2">{{ amenity.name }}</span>
+                        {% endfor %}
+                      </div>
+                      <a href="{% url 'book_room' room.id %}" class="btn btn-primary book-room-btn" data-room-id="{{ room.id }}">Đặt ngay</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    $('#roomTypeFilter').change(function() {
+        var selectedType = $(this).val();
+        if (selectedType) {
+            $('.room-card').hide();
+            $('.room-card[data-room-type="' + selectedType + '"]').show();
+        } else {
+            $('.room-card').show();
+        }
+    });
+
+    $('.book-room-btn').click(function(e) {
+        e.preventDefault();
+        var roomId = $(this).data('room-id');
+        window.location.href = `/book-room/${roomId}/`;
+    });
+
+    // Xử lý form đặt phòng
+    $('.booking-form').submit(function(e) {
+        var startDate = new Date($('#startDate').val());
+        var endDate = new Date($('#endDate').val());
+        
+        if (endDate <= startDate) {
+            e.preventDefault();
+            alert('Ngày trả phòng phải sau ngày nhận phòng');
+            return false;
+        }
+    });
+
+    // Cập nhật ngày trả phòng tối thiểu khi chọn ngày nhận phòng
+    $('#startDate').change(function() {
+        var startDate = $(this).val();
+        $('#endDate').attr('min', startDate);
+    });
+});
+</script>
+{% endblock javascript %}
+
+{% endblock content %}

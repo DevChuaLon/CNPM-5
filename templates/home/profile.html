@@ -1,0 +1,144 @@
+{% extends 'home/base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <!-- Debug info -->
+    <div class="alert alert-info">
+        Debug: User {{ user.username }} is logged in
+    </div>
+
+    <!-- Debug info -->
+    <div style="background: #f8f9fa; padding: 10px; margin: 10px 0;">
+        <p>Debug Info:</p>
+        <p>Username: {{ user.username }}</p>
+        <p>Total Bookings: {{ total_bookings }}</p>
+        <p>Active Bookings: {{ active_bookings }}</p>
+        <p>Recent Bookings Count: {{ recent_bookings|length }}</p>
+    </div>
+
+    <div class="row">
+        <!-- Thông tin cá nhân -->
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Thông tin cá nhân</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="fas fa-user"></i> Tên đăng nhập:</strong>
+                        <p class="text-muted mb-2">{{ user.username }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-envelope"></i> Email:</strong>
+                        <p class="text-muted mb-2">{{ user.email|default:"Chưa cập nhật" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-phone"></i> Số điện thoại:</strong>
+                        <p class="text-muted mb-2">{{ profile.phone|default:"Chưa cập nhật" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-map-marker-alt"></i> Địa chỉ:</strong>
+                        <p class="text-muted mb-2">{{ profile.address|default:"Chưa cập nhật" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-calendar"></i> Ngày tham gia:</strong>
+                        <p class="text-muted mb-2">{{ user.date_joined|date:"d/m/Y" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-bookmark"></i> Tổng đặt phòng:</strong>
+                        <p class="text-muted mb-2">{{ total_bookings }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-check-circle"></i> Đặt phòng hoạt động:</strong>
+                        <p class="text-muted mb-2">{{ active_bookings }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Đặt phòng gần đây -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Đặt phòng gần đây</h4>
+                    <a href="{% url 'booking_history' %}" class="btn btn-light btn-sm">Xem tất cả</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_bookings %}
+                        {% for booking in recent_bookings %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h5 class="card-title">{{ booking.pod.pod_name }}</h5>
+                                        <p class="mb-1">
+                                            <strong>Check-in:</strong> 
+                                            {{ booking.start_date|date:"d/m/Y" }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Check-out:</strong> 
+                                            {{ booking.end_date|date:"d/m/Y" }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Trạng thái:</strong>
+                                            <span class="badge {% if booking.status == 'active' %}bg-success
+                                                          {% elif booking.status == 'cancelled' %}bg-danger
+                                                          {% else %}bg-secondary{% endif %}">
+                                                {{ booking.get_status_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        {% if booking.status == 'active' and booking.start_date|date:"Y-m-d" > today %}
+                                        <a href="{% url 'cancel_booking' booking.uid %}" 
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('Bạn có chắc muốn hủy đặt phòng này?')">
+                                            <i class="fas fa-times"></i> Hủy đặt phòng
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Bạn chưa có đặt phòng nào. 
+                            <a href="{% url 'index' %}" class="alert-link">Đặt phòng ngay</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thêm Font Awesome và CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+    .card {
+        margin-bottom: 20px;
+        border: none;
+    }
+    .shadow {
+        box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15) !important;
+    }
+    .card-header {
+        background-color: #007bff !important;
+        border-bottom: 0;
+    }
+    .badge {
+        font-size: 0.875rem;
+        padding: 0.5em 0.75em;
+    }
+    .text-muted {
+        color: #6c757d !important;
+    }
+    .btn-light {
+        background-color: rgba(255,255,255,0.15);
+        border-color: transparent;
+    }
+    .btn-light:hover {
+        background-color: rgba(255,255,255,0.25);
+    }
+</style>
+{% endblock %}

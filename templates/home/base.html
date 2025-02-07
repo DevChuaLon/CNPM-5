@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WORK CHILL</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Custom CSS -->
+    <style>
+      .navbar {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .footer {
+        margin-top: 3rem;
+        padding: 2rem 0;
+        background-color: #f8f9fa;
+      }
+    </style>
+    {% block css %}{% endblock %}
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+      <div class="container">
+        <a class="navbar-brand" href="{% url 'index' %}">
+          <i class="fas fa-pod"></i> WORK CHILL
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'index' %}">
+                <i class="fas fa-home"></i> Trang chủ
+              </a>
+            </li>
+            {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'user_profile' %}">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'booking_history' %}">
+                <i class="fas fa-history"></i> Lịch sử đặt phòng
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'signout' %}">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+              </a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'signin' %}">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'signup' %}">
+                <i class="fas fa-user-plus"></i> Đăng ký
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {% if message.tags == 'success' %}
+        <i class="fas fa-check-circle"></i>
+        {% elif message.tags == 'error' %}
+        <i class="fas fa-exclamation-circle"></i>
+        {% elif message.tags == 'warning' %}
+        <i class="fas fa-exclamation-triangle"></i>
+        {% elif message.tags == 'info' %}
+        <i class="fas fa-info-circle"></i>
+        {% endif %} {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    {% block content %}{% endblock content %}
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4">
+            <h5><i class="fas fa-pod"></i> WORK CHILL</h5>
+            <p>Đặt phòng làm việc trực tuyến dễ dàng và nhanh chóng.</p>
+          </div>
+          <div class="col-md-4">
+            <h5>Liên kết</h5>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'index' %}">Trang chủ</a></li>
+              <li><a href="#">Về chúng tôi</a></li>
+              <li><a href="#">Điều khoản sử dụng</a></li>
+              <li><a href="#">Chính sách bảo mật</a></li>
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <h5>Liên hệ</h5>
+            <ul class="list-unstyled">
+              <li><i class="fas fa-phone"></i> +6969696969</li>
+              <li><i class="fas fa-envelope"></i> info@workchill.com</li>
+              <li><i class="fas fa-map-marker-alt"></i> TPHCM, Việt Nam</li>
+            </ul>
+          </div>
+        </div>
+        <hr />
+        <div class="text-center">
+          <p>&copy; 2025 WORK CHILL. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Initialize Select2 -->
+    <script>
+      $(document).ready(function () {
+        $("select[multiple]").select2({
+          placeholder: "Chọn tiện nghi",
+          allowClear: true,
+        });
+      });
+    </script>
+
+    {% block js %}{% endblock %}
+  </body>
+</html>
