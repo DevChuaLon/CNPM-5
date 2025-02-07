@@ -17,12 +17,14 @@
   <div class="card">
     <div class="card-body">
       <div class="row">
-        {% for i in hotel.images.all %}
-
-        <div class="carousel-item active">
-            <img src="/media/{{i.images}}" class="d-block w-100" alt="...">
-        </div>
-        {% endfor %}
+        <div class="hotel-images">
+            {% if hotel.hotel_images.all %}
+                {% for image in hotel.hotel_images.all %}
+                    <div class="hotel-image">
+                        <img src="{{ image.images.url }}" alt="{{ hotel.hotel_name }}" class="img-fluid">
+                    </div>
+                {% endfor %}
+            {% endif %}
         </div>
         <div class="col-md-8">
           <h2>{{ hotel.hotel_name }}</h2>

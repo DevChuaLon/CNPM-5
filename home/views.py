@@ -240,3 +240,18 @@ def get_hotel(request, uid):
     except Hotel.DoesNotExist:
         messages.error(request, 'Không tìm thấy khách sạn')
         return redirect('index')
+
+def hotel_detail(request, hotel_id):
+    try:
+        hotel = Hotel.objects.get(id=hotel_id)
+        # Debug: In ra đường dẫn ảnh
+        for image in hotel.hotel_images.all():
+            print(f"Image URL: {image.images.url}")
+            print(f"Image Path: {image.images.path}")
+        context = {
+            'hotel': hotel,
+            'hotel_images': hotel.hotel_images.all()  # Lấy tất cả hình ảnh của khách sạn
+        }
+        return render(request, 'home/hotel.html', context)
+    except Hotel.DoesNotExist:
+        return redirect('home')
