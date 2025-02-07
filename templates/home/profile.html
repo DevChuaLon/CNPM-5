@@ -1,26 +1,16 @@
 {% extends 'home/base.html' %}
 {% block content %}
 <div class="container mt-5">
-    <!-- Debug info -->
-    <div class="alert alert-info">
-        Debug: User {{ user.username }} is logged in
-    </div>
-
-    <!-- Debug info -->
-    <div style="background: #f8f9fa; padding: 10px; margin: 10px 0;">
-        <p>Debug Info:</p>
-        <p>Username: {{ user.username }}</p>
-        <p>Total Bookings: {{ total_bookings }}</p>
-        <p>Active Bookings: {{ active_bookings }}</p>
-        <p>Recent Bookings Count: {{ recent_bookings|length }}</p>
-    </div>
 
     <div class="row">
         <!-- Thông tin cá nhân -->
         <div class="col-md-4">
             <div class="card shadow">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Thông tin cá nhân</h4>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -107,6 +97,42 @@
                         </div>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh sửa thông tin -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa thông tin cá nhân</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{% url 'edit_profile' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" 
+                                   value="{{ user.email|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="tel" name="phone" class="form-control" 
+                                   value="{{ profile.phone|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <textarea name="address" class="form-control" 
+                                      rows="3">{{ profile.address|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

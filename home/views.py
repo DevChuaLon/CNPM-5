@@ -122,26 +122,28 @@ def index(request):
 @login_required
 def user_profile(request):
     try:
-        user = request.user
-        recent_bookings = PodBooking.objects.filter(
-            user=user,
-        ).select_related('pod').order_by('-created_at')[:5]
+        # Lấy hoặc tạo profile cho user
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
         
-        total_bookings = PodBooking.objects.filter(user=user).count()
-        active_bookings = PodBooking.objects.filter(user=user, status='active').count()
+        # Lấy thông tin đặt phòng
+        bookings = PodBooking.objects.filter(user=request.user)
+        total_bookings = bookings.count()
+        active_bookings = bookings.filter(status='active').count()
+        recent_bookings = bookings.order_by('-created_at')[:5]  # 5 đơn đặt phòng gần nhất
         
         context = {
-            'user': user,
-            'recent_bookings': recent_bookings,
+            'user': request.user,
+            'profile': profile,
             'total_bookings': total_bookings,
             'active_bookings': active_bookings,
-            'today': date.today().strftime('%Y-%m-%d')
+            'recent_bookings': recent_bookings,
+            'today': date.today()
         }
         
         return render(request, 'home/profile.html', context)
         
     except Exception as e:
-        messages.error(request, 'Đã xảy ra lỗi khi tải thông tin người dùng')
+        messages.error(request, 'Đã xảy ra lỗi khi tải trang profile')
         return redirect('index')
 
 @login_required
@@ -246,3 +248,24 @@ def pod_detail(request, pod_id):
         return render(request, 'home/pod.html', context)
     except Pod.DoesNotExist:
         return redirect('home')
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        try:
+            # Cập nhật thông tin user
+            user = request.user
+            user.email = request.POST.get('email', '')
+            user.save()
+
+            # Cập nhật hoặc tạo profile
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.phone = request.POST.get('phone', '')
+            profile.address = request.POST.get('address', '')
+            profile.save()
+
+            messages.success(request, 'Cập nhật thông tin thành công')
+        except Exception as e:
+            messages.error(request, 'Đã xảy ra lỗi khi cập nhật thông tin')
+            
+    return redirect('user_profile')

@@ -30,6 +30,7 @@ urlpatterns = [
     path('profile/', user_profile, name='user_profile'),
     path('bookings/', booking_history, name='booking_history'),
     path('booking/cancel/<uuid:booking_id>/', cancel_booking, name='cancel_booking'),
+    path('profile/edit/', edit_profile, name='edit_profile'),
 ]
 
 if settings.DEBUG:
