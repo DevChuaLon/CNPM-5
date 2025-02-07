@@ -59,3 +59,53 @@ class PodBooking(BaseModel):
     
     def __str__(self) -> str:
         return f'{self.pod.pod_name} - {self.user.username}'
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('booking', 'Đặt phòng'),
+        ('system', 'Hệ thống'),
+        ('update', 'Cập nhật'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+
+    @classmethod
+    def create_notification(cls, user, type, title, message):
+        return cls.objects.create(
+            user=user,
+            type=type,
+            title=title,
+            message=message
+        )
+
+class AdminNotification(models.Model):
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_sent = models.BooleanField(default=False)
+
+    def send_to_all_users(self):
+        users = User.objects.all()
+        for user in users:
+            Notification.objects.create(
+                user=user,
+                type='admin',
+                title=self.title,
+                message=self.message
+            )
+        self.is_sent = True
+        self.save()
+
+    def __str__(self):
+        return f"Admin Notification: {self.title}"

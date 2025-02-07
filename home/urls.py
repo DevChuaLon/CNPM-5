@@ -31,6 +31,12 @@ urlpatterns = [
     path('bookings/', booking_history, name='booking_history'),
     path('booking/cancel/<uuid:booking_id>/', cancel_booking, name='cancel_booking'),
     path('profile/edit/', edit_profile, name='edit_profile'),
+    path('notifications/', get_notifications, name='get_notifications'),
+    path('notifications/mark-read/<int:notification_id>/', 
+         mark_notification_as_read, name='mark_notification_as_read'),
+    path('notifications/mark-all-read/', 
+         views.mark_all_notifications_as_read, 
+         name='mark_all_notifications_as_read'),
 ]
 
 if settings.DEBUG:

@@ -7,6 +7,8 @@ from . models import *
 from django.db.models import Q
 from django.core.paginator import Paginator
 from datetime import datetime, date
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 def check_booking(uid, room_count, start_date, end_date):
     try:
@@ -200,22 +202,25 @@ def booking_history(request):
 def cancel_booking(request, booking_id):
     try:
         booking = get_object_or_404(PodBooking, uid=booking_id, user=request.user)
-        today = date.today()
-        
-        if booking.status != 'active':
-            messages.error(request, 'Không thể hủy đặt phòng này vì không còn hoạt động')
-        elif booking.start_date <= today:
-            messages.error(request, 'Không thể hủy đặt phòng này vì đã quá hạn')
-        else:
+        if booking.status == 'active':
             booking.status = 'cancelled'
             booking.save()
-            messages.success(request, 'Đã hủy đặt phòng thành công')
             
-        return redirect('booking_history')
-        
+            # Tạo thông báo hủy phòng
+            Notification.objects.create(
+                user=request.user,
+                type='booking',
+                title='Hủy đặt phòng thành công',
+                message=f'Bạn đã hủy đặt phòng {booking.pod.pod_name} từ {booking.start_date} đến {booking.end_date}'
+            )
+            
+            messages.success(request, 'Hủy đặt phòng thành công!')
+        else:
+            messages.error(request, 'Không thể hủy đặt phòng này!')
     except Exception as e:
-        messages.error(request, 'Đã xảy ra lỗi khi hủy đặt phòng')
-        return redirect('booking_history')
+        messages.error(request, 'Đã xảy ra lỗi khi hủy đặt phòng!')
+    
+    return redirect('booking_history')
 
 def get_pod(request, uid):
     try:
@@ -275,19 +280,104 @@ def pod_detail(request, pod_id):
 def edit_profile(request):
     if request.method == 'POST':
         try:
-            # Cập nhật thông tin user
             user = request.user
             user.email = request.POST.get('email', '')
             user.save()
 
-            # Cập nhật hoặc tạo profile
             profile, created = UserProfile.objects.get_or_create(user=user)
             profile.phone = request.POST.get('phone', '')
             profile.address = request.POST.get('address', '')
             profile.save()
+
+            # Tạo thông báo cập nhật thông tin
+            Notification.objects.create(
+                user=user,
+                type='update',
+                title='Cập nhật thông tin thành công',
+                message='Thông tin cá nhân của bạn đã được cập nhật'
+            )
 
             messages.success(request, 'Cập nhật thông tin thành công')
         except Exception as e:
             messages.error(request, 'Đã xảy ra lỗi khi cập nhật thông tin')
             
     return redirect('user_profile')
+
+@login_required
+def get_notifications(request):
+    notifications = request.user.notifications.all()[:10]
+    return JsonResponse({
+        'notifications': [{
+            'id': n.id,
+            'type': n.type,
+            'title': n.title,
+            'message': n.message,
+            'is_read': n.is_read,
+            'created_at': n.created_at.isoformat()
+        } for n in notifications],
+        'unread_count': request.user.notifications.filter(is_read=False).count()
+    })
+
+@login_required
+@require_POST
+def mark_notification_as_read(request, notification_id):
+    try:
+        notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@require_POST
+def mark_all_notifications_as_read(request):
+    try:
+        request.user.notifications.filter(is_read=False).update(is_read=True)
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+# Ví dụ tạo thông báo khi đặt phòng
+def create_booking(request, pod_id):
+    # ... existing booking code ...
+    if booking:
+        Notification.create_notification(
+            user=request.user,
+            type='booking',
+            title='Đặt phòng thành công',
+            message=f'Bạn đã đặt phòng {pod.pod_name} thành công'
+        )
+
+# Thêm thông báo khi đặt phòng thành công
+def book_pod(request, uid):
+    if request.method == 'POST':
+        try:
+            pod = Pod.objects.get(uid=uid)
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+            
+            # Tạo booking
+            booking = PodBooking.objects.create(
+                user=request.user,
+                pod=pod,
+                start_date=start_date,
+                end_date=end_date,
+                status='active'
+            )
+            
+            # Tạo thông báo đặt phòng thành công
+            Notification.objects.create(
+                user=request.user,
+                type='booking',
+                title='Đặt phòng thành công',
+                message=f'Bạn đã đặt phòng {pod.pod_name} thành công từ {start_date} đến {end_date}'
+            )
+            
+            messages.success(request, 'Đặt phòng thành công!')
+            return redirect('booking_history')
+            
+        except Exception as e:
+            messages.error(request, 'Đã xảy ra lỗi khi đặt phòng!')
+            return redirect('get_pod', uid=uid)
+    return redirect('get_pod', uid=uid)

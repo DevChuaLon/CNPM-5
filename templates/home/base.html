@@ -33,6 +33,71 @@
         padding: 2rem 0;
         background-color: #f8f9fa;
       }
+
+      .notification-dropdown {
+        width: 300px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .notification-list .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .notification-list .dropdown-item:hover {
+        background-color: #f8f9fa;
+      }
+
+      .notification-list .dropdown-item:last-child {
+        border-bottom: none;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.6em;
+      }
+
+      .nav-item.position-relative .badge {
+        font-size: 0.7rem;
+        min-width: 1rem;
+        height: 1rem;
+        padding: 0 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .notification-badge {
+        color: #ffffff;
+        text-shadow: 
+            -1px -1px 0 #dc3545,
+             1px -1px 0 #dc3545,
+            -1px  1px 0 #dc3545,
+             1px  1px 0 #dc3545;
+        font-size: 0.8rem;
+        font-weight: bold;
+        min-width: 1rem;
+        height: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mark-all-read {
+        color: #0d6efd;
+        padding: 0;
+        font-size: 0.875rem;
+      }
+      
+      .mark-all-read:hover {
+        color: #0a58ca;
+      }
+      
+      .dropdown-header {
+        padding: 0;
+        font-size: 1rem;
+        color: #212529;
+      }
     </style>
     {% block css %}{% endblock %}
   </head>
@@ -69,6 +134,33 @@
               <a class="nav-link" href="{% url 'booking_history' %}">
                 <i class="fas fa-history"></i> Lịch sử đặt phòng
               </a>
+            </li>
+            <li class="nav-item dropdown position-relative">
+              <a class="nav-link" href="#" id="notificationDropdown" role="button" 
+                 data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-bell"></i>
+                <span class="position-absolute translate-middle notification-badge"
+                      style="bottom: -5px; right: 0;">
+                    <!-- Số thông báo sẽ được cập nhật bằng JavaScript -->
+                </span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end notification-dropdown" 
+                   aria-labelledby="notificationDropdown">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2">
+                    <h6 class="dropdown-header m-0">Thông báo</h6>
+                    <button class="btn btn-link btn-sm text-decoration-none mark-all-read">
+                        Đánh dấu tất cả đã đọc
+                    </button>
+                </div>
+                <div class="dropdown-divider mt-0"></div>
+                <div class="notification-list">
+                    <!-- Thông báo sẽ được thêm vào đây bằng JavaScript -->
+                </div>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item text-center" href="#">
+                    Xem tất cả thông báo
+                </a>
+              </div>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{% url 'signout' %}">
@@ -165,6 +257,146 @@
       });
     </script>
 
+    <!-- Thêm script ra khỏi block js và đặt ở cuối file -->
+    <script>
+    $(document).ready(function() {
+        // Thêm CSRF token vào tất cả các request AJAX
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Vừa xong';
+            if (diffInSeconds < 3600) return Math.floor(diffInSeconds / 60) + ' phút trước';
+            if (diffInSeconds < 86400) return Math.floor(diffInSeconds / 3600) + ' giờ trước';
+            return Math.floor(diffInSeconds / 86400) + ' ngày trước';
+        }
+
+        function getNotificationIcon(type) {
+            switch(type) {
+                case 'booking':
+                    return 'fa-calendar-check text-success';
+                case 'update':
+                    return 'fa-user-edit text-primary';
+                default:
+                    return 'fa-info-circle text-info';
+            }
+        }
+
+        function updateNotifications() {
+            $.get('{% url "get_notifications" %}', function(data) {
+                // Cập nhật số thông báo
+                if (data.unread_count > 0) {
+                    $('.notification-badge').text(data.unread_count).show();
+                } else {
+                    $('.notification-badge').hide();
+                }
+
+                // Cập nhật danh sách thông báo
+                const notificationList = $('.notification-list');
+                notificationList.empty();
+
+                if (data.notifications.length === 0) {
+                    notificationList.append(`
+                        <div class="dropdown-item text-muted text-center">
+                            Không có thông báo nào
+                        </div>
+                    `);
+                } else {
+                    data.notifications.forEach(function(notification) {
+                        const notificationHtml = `
+                            <a class="dropdown-item ${notification.is_read ? '' : 'unread'}" 
+                               href="#" data-id="${notification.id}">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas ${getNotificationIcon(notification.type)} ${notification.is_read ? 'text-muted' : ''}"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <p class="mb-0"><strong>${notification.title}</strong></p>
+                                        <p class="mb-0">${notification.message}</p>
+                                        <small class="text-muted">${formatTimeAgo(notification.created_at)}</small>
+                                    </div>
+                                </div>
+                            </a>
+                        `;
+                        notificationList.append(notificationHtml);
+                    });
+                }
+            });
+        }
+
+        // Cập nhật hàm đánh dấu đã đọc
+        $(document).on('click', '.notification-list .dropdown-item', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const $this = $(this);
+            const notificationId = $this.data('id');
+            if (notificationId) {
+                $.ajax({
+                    url: `/notifications/mark-read/${notificationId}/`,
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            updateNotifications();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error marking notification as read:', error);
+                    }
+                });
+            }
+        });
+
+        // Cập nhật hàm đánh dấu tất cả đã đọc
+        $(document).on('click', '.mark-all-read', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $.ajax({
+                url: '{% url "mark_all_notifications_as_read" %}',
+                type: 'POST',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        updateNotifications();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error marking all notifications as read:', error);
+                }
+            });
+        });
+
+        // Cập nhật thông báo ban đầu và mỗi 30 giây
+        updateNotifications();
+        setInterval(updateNotifications, 30000);
+    });
+    </script>
+
+    <!-- Thêm block js cho các script tùy chỉnh khác -->
     {% block js %}{% endblock %}
   </body>
 </html>
