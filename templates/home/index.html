@@ -1,5 +1,6 @@
 {% extends 'home/base.html' %}
 {% load coustom_tags %}
+{% load custom_filters %}
 {% block css %}
 
 <style>
@@ -241,7 +242,7 @@ Welcome To WORK CHILL.com
                                 <p class="card-text">{{ pod.description|truncatewords:20 }}</p>
                                 <p class="card-text">
                                     <strong>Giá:</strong> 
-                                    <span class="text-primary">{{ pod.pod_price|floatformat:0 }}000VNĐ/h</span>
+                                    <span class="text-primary">{{ pod.pod_price|format_price }}</span>
                                 </p>
                                 <p class="card-text">
                                     <small class="text-muted">Còn {{ pod.room_count }} phòng trống</small>
