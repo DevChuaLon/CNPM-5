@@ -109,3 +109,15 @@ class AdminNotification(models.Model):
 
     def __str__(self):
         return f"Admin Notification: {self.title}"
+
+class Review(BaseModel):
+    pod = models.ForeignKey(Pod, related_name='reviews', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='reviews', on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])  # 1-5 sao
+    comment = models.TextField()
+    
+    def __str__(self):
+        return f"{self.user.username}'s review for {self.pod.pod_name}"
+
+    class Meta:
+        ordering = ['-created_at']

@@ -4,9 +4,9 @@ from django.contrib.auth import authenticate, logout, login
 from django.contrib import messages
 from django.contrib.auth.models import User
 from . models import *
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.core.paginator import Paginator
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
@@ -227,34 +227,23 @@ def get_pod(request, uid):
         pod = Pod.objects.get(uid=uid)
         today = date.today().strftime('%Y-%m-%d')
         
+        # Lấy số giờ từ cả GET và POST
         if request.method == 'POST':
-            if not request.user.is_authenticated:
-                return redirect('signin')
-                
-            start_date = request.POST.get('startDate')
-            end_date = request.POST.get('endDate')
-            
-            if start_date and end_date:
-                if check_booking(uid, pod.room_count, start_date, end_date):
-                    PodBooking.objects.create(
-                        pod=pod,
-                        user=request.user,
-                        start_date=start_date,
-                        end_date=end_date,
-                        booking_type='Pre Paid',
-                        status='active'
-                    )
-                    messages.success(request, 'Đặt phòng thành công')
-                    return redirect('booking_history')
-                else:
-                    messages.error(request, 'Phòng đã hết trong thời gian này')
-            else:
-                messages.error(request, 'Vui lòng chọn ngày check-in và check-out')
+            hours = int(request.POST.get('hours', 1))
+        else:
+            hours = int(request.GET.get('hours', 1))
+        
+        # Tính tổng tiền
+        total_amount = pod.pod_price * hours
         
         context = {
             'pod': pod,
-            'today': today
+            'today': today,
+            'available_rooms': pod.room_count,
+            'total_amount': total_amount,
+            'hours': hours
         }
+        
         return render(request, 'home/pod.html', context)
         
     except Pod.DoesNotExist:
@@ -381,3 +370,51 @@ def book_pod(request, uid):
             messages.error(request, 'Đã xảy ra lỗi khi đặt phòng!')
             return redirect('get_pod', uid=uid)
     return redirect('get_pod', uid=uid)
+
+@login_required
+@require_POST
+def add_review(request, pod_id):
+    try:
+        pod = get_object_or_404(Pod, uid=pod_id)
+        rating = int(request.POST.get('rating'))
+        comment = request.POST.get('comment')
+        
+        # Kiểm tra xem người dùng đã từng đặt phòng này chưa
+        has_booking = PodBooking.objects.filter(
+            pod=pod,
+            user=request.user,
+            status='completed'
+        ).exists()
+        
+        if not has_booking:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Bạn cần phải đặt và sử dụng phòng trước khi đánh giá'
+            }, status=400)
+        
+        # Kiểm tra xem người dùng đã đánh giá phòng này chưa
+        existing_review = Review.objects.filter(pod=pod, user=request.user).first()
+        if existing_review:
+            existing_review.rating = rating
+            existing_review.comment = comment
+            existing_review.save()
+            message = 'Cập nhật đánh giá thành công'
+        else:
+            Review.objects.create(
+                pod=pod,
+                user=request.user,
+                rating=rating,
+                comment=comment
+            )
+            message = 'Thêm đánh giá thành công'
+            
+        return JsonResponse({
+            'status': 'success',
+            'message': message
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

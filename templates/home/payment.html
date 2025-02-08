@@ -1,0 +1,126 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Thanh toán đặt phòng{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">Thanh toán đặt phòng</h3>
+        </div>
+        <div class="card-body">
+          <!-- Hiển thị thông tin đặt phòng -->
+          <div id="bookingInfo" class="mb-4 p-3 bg-light rounded"></div>
+
+          <!-- Form thanh toán -->
+          <form id="paymentForm" method="POST">
+            {% csrf_token %}
+            <h4 class="mb-3">Thông tin thanh toán</h4>
+            
+            <div class="mb-3">
+              <label class="form-label">Số thẻ</label>
+              <input type="text" class="form-control" name="card_number" required 
+                     pattern="[0-9]{16}" maxlength="16" placeholder="1234 5678 9012 3456">
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Ngày hết hạn</label>
+                <input type="text" class="form-control" name="expiry_date" required 
+                       pattern="(0[1-9]|1[0-2])\/[0-9]{2}" placeholder="MM/YY">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">CVV</label>
+                <input type="text" class="form-control" name="cvv" required 
+                       pattern="[0-9]{3,4}" maxlength="4" placeholder="123">
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label">Tên chủ thẻ</label>
+              <input type="text" class="form-control" name="card_holder" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+              <i class="fas fa-lock me-2"></i>Xác nhận thanh toán
+              <span id="amountText" class="ms-2"></span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+  // Format số thẻ
+  $('input[name="card_number"]').on('input', function() {
+    $(this).val($(this).val().replace(/\D/g, ''));
+  });
+
+  // Format CVV
+  $('input[name="cvv"]').on('input', function() {
+    $(this).val($(this).val().replace(/\D/g, ''));
+  });
+
+  // Format ngày hết hạn
+  $('input[name="expiry_date"]').on('input', function() {
+    let value = $(this).val().replace(/\D/g, '');
+    if (value.length >= 2) {
+      value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    $(this).val(value);
+  });
+
+  // Lấy và hiển thị thông tin đặt phòng
+  const bookingData = JSON.parse(localStorage.getItem('bookingData'));
+  if (bookingData) {
+    $('#bookingInfo').html(`
+      <h5 class="mb-3">Chi tiết đặt phòng</h5>
+      <div class="row">
+        <div class="col-6">
+          <p class="mb-2"><strong>Phòng:</strong> ${bookingData.pod_name}</p>
+          <p class="mb-2"><strong>Ngày đặt:</strong> ${bookingData.booking_date}</p>
+          <p class="mb-2"><strong>Giờ bắt đầu:</strong> ${bookingData.start_time}</p>
+        </div>
+        <div class="col-6">
+          <p class="mb-2"><strong>Số giờ:</strong> ${bookingData.duration} giờ</p>
+          <p class="mb-2"><strong>Tổng tiền:</strong> ${new Intl.NumberFormat('vi-VN').format(bookingData.total_amount)} VNĐ</p>
+        </div>
+      </div>
+    `);
+    $('#amountText').text(`${new Intl.NumberFormat('vi-VN').format(bookingData.total_amount)} VNĐ`);
+  }
+
+  // Validate form trước khi submit
+  $('#paymentForm').submit(function(e) {
+    const cardNumber = $('input[name="card_number"]').val();
+    const expiryDate = $('input[name="expiry_date"]').val();
+    const cvv = $('input[name="cvv"]').val();
+
+    if (cardNumber.length !== 16 || !cardNumber.match(/^\d{16}$/)) {
+      alert('Số thẻ không hợp lệ');
+      e.preventDefault();
+      return false;
+    }
+
+    if (!expiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
+      alert('Ngày hết hạn không hợp lệ');
+      e.preventDefault();
+      return false;
+    }
+
+    if (!cvv.match(/^\d{3,4}$/)) {
+      alert('CVV không hợp lệ');
+      e.preventDefault();
+      return false;
+    }
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

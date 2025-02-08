@@ -1,29 +1,61 @@
 {% extends 'home/base.html' %}
+{% load humanize %}
 
-{% block title %}
-{{ pod.pod_name }}
-{% endblock title %}
+{% block title %}{{ pod.pod_name }}{% endblock %}
 
 {% block css %}
 <style>
-  .amenity-icon {
-    width: 24px;
-    margin-right: 10px;
+  .amenity-icon { width: 24px; margin-right: 10px; }
+  .star-rating { color: #ffc107; }
+  .price-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
   }
-  .star-rating {
-    color: #ffc107;
+  .time-selector {
+    width: 100px;
+    margin: 0 10px;
   }
-  .room-filter {
-    margin-bottom: 20px;
+  .feedback-stars {
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .feedback-stars i:hover { color: #ffc107; }
+  .total-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+  }
+  .card-header {
+    background: linear-gradient(45deg, #2193b0, #6dd5ed);
+  }
+  .border-rounded {
+    transition: all 0.3s ease;
+  }
+  .border-rounded:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .carousel {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .carousel-item img {
+    height: 300px;
+    object-fit: cover;
   }
 </style>
-{% endblock css %}
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
   <div class="card">
     <div class="card-body">
       <div class="row">
+        <!-- Phần hình ảnh -->
         <div class="col-md-4">
           <div id="podCarousel" class="carousel slide" data-bs-ride="carousel">
             <div class="carousel-inner">
@@ -36,136 +68,253 @@
               {% endif %}
             </div>
             <button class="carousel-control-prev" type="button" data-bs-target="#podCarousel" data-bs-slide="prev">
-              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="carousel-control-prev-icon"></span>
             </button>
             <button class="carousel-control-next" type="button" data-bs-target="#podCarousel" data-bs-slide="next">
-              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="carousel-control-next-icon"></span>
             </button>
+          </div>
+
+          <!-- Thêm phần tiện ích ở đây -->
+          <div class="card mt-3">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0">
+                <i class="fas fa-concierge-bell me-2"></i>Tiện ích phòng
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-2">
+                {% for amenity in pod.amenities.all %}
+                <div class="col-6">
+                  <div class="d-flex align-items-center p-2 border rounded">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <span>{{ amenity.amenity_name }}</span>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Thêm phần mô tả -->
+          <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+              <h5 class="card-title mb-0">
+                <i class="fas fa-info-circle me-2"></i>Mô tả
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="card-text">{{ pod.description }}</p>
+            </div>
           </div>
         </div>
 
+        <!-- Phần thông tin -->
         <div class="col-md-8">
-          <h2>{{ pod.pod_name }}</h2>
-          <div class="star-rating mb-2">
-            {% for i in "12345"|make_list %}
-            <i class="fas fa-star {% if forloop.counter <= pod.rating %}text-warning{% else %}text-secondary{% endif %}"></i>
-            {% endfor %}
-          </div>
-          <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ pod.pod_address }}</p>
-          <p>{{ pod.pod_description }}</p>
-          
-          <h4 class="mt-4">Tiện nghi:</h4>
-          <div class="row">
-            {% for amenity in pod.amenities.all %}
-            <div class="col-md-4 mb-2">
-              <div class="d-flex align-items-center">
-                <i class="fas {{ amenity.icon }} amenity-icon"></i>
-                <span>{{ amenity.name }}</span>
-              </div>
-            </div>
-            {% endfor %}
+          <div class="d-flex justify-content-between align-items-center">
+            <h2>{{ pod.pod_name }}</h2>
+            <div class="badge bg-success">Còn {{ pod.available_rooms }} phòng trống</div>
           </div>
 
-          <div class="mt-4">
-            <h4>Đặt phòng:</h4>
-            <form method="POST" class="booking-form">
+          <p class="text-muted fs-5">
+            <i class="fas fa-money-bill text-success"></i>
+            <span class="fw-bold">{{ pod.pod_price|intcomma }}</span> VNĐ/giờ
+          </p>
+          
+          <!-- Thông tin giá và đặt phòng -->
+          <div class="price-card">
+            <form method="POST" class="booking-form" id="bookingForm">
               {% csrf_token %}
               <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="startDate" class="form-label">Ngày nhận phòng</label>
-                  <input type="date" class="form-control" id="startDate" name="startDate" 
-                         min="{{ today }}" required>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Ngày đặt phòng</label>
+                    <input type="date" class="form-control" name="bookingDate" id="bookingDate" 
+                           min="{{ today }}" required>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label for="endDate" class="form-label">Ngày trả phòng</label>
-                  <input type="date" class="form-control" id="endDate" name="endDate" 
-                         min="{{ today }}" required>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Giờ nhận phòng</label>
+                    <input type="time" class="form-control" name="checkInTime" id="checkInTime" required>
+                  </div>
                 </div>
               </div>
-              <button type="submit" class="btn btn-primary">Đặt phòng ngay</button>
+
+              <!-- Form bao quanh phần nhập số giờ -->
+              <form method="post" id="hoursForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label for="hours" class="form-label">Số giờ thuê</label>
+                  <div class="d-flex align-items-center">
+                    <input type="number" 
+                           class="form-control" 
+                           name="hours" 
+                           id="hours" 
+                           min="1" 
+                           max="24" 
+                           value="{{ hours|default:1 }}" 
+                           required 
+                           style="width: 100px;">
+                    <span class="ms-2 me-2">giờ</span>
+                    <button type="submit" 
+                            class="btn btn-primary" 
+                            id="updateTotal">
+                      <i class="fas fa-sync-alt"></i> Xác nhận
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- Phần hiển thị tổng tiền -->
+              <div class="mb-3">
+                <label class="form-label">Tổng số tiền phải thanh toán</label>
+                <div class="d-flex align-items-center">
+                  <output class="form-control" 
+                          id="totalAmount" 
+                          style="width: 150px; background-color: #f8f9fa;">
+                    {{ total_amount|intcomma }}
+                  </output>
+                  <span class="ms-2">VNĐ</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg w-100">Đặt phòng ngay</button>
             </form>
           </div>
 
+          <!-- Thêm phần hiển thị đánh giá vào sau phần form đặt phòng -->
           <div class="mt-4">
-            <h4>Phòng trống:</h4>
-            <div class="room-filter">
-              <select class="form-select" id="roomTypeFilter">
-                <option value="">Tất cả loại phòng</option>
-                {% for room_type in room_types %}
-                <option value="{{ room_type }}">{{ room_type }}</option>
+            <h4>Đánh giá ({{ review_count }})</h4>
+            <div class="star-rating mb-2">
+                {% for i in "12345"|make_list %}
+                <i class="fas fa-star {% if forloop.counter <= avg_rating %}text-warning{% else %}text-secondary{% endif %}"></i>
                 {% endfor %}
-              </select>
+                <span class="ms-2">{{ avg_rating }}/5 ({{ review_count }} đánh giá)</span>
             </div>
 
-            {% for room in pod.room_set.all %}
-            <div class="card mb-3 room-card" data-room-type="{{ room.room_type }}">
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-4">
-                    <img src="{{ room.image.url }}" class="img-fluid rounded" alt="Room Image">
-                  </div>
-                  <div class="col-md-8">
-                    <h5 class="card-title">{{ room.room_type }}</h5>
-                    <p class="card-text text-success fw-bold">{{ room.price|floatformat:2 }} VNĐ/đêm</p>
-                    <p class="card-text">{{ room.description }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <div class="room-amenities">
-                        {% for amenity in room.amenities.all %}
-                        <span class="badge bg-light text-dark me-2">{{ amenity.name }}</span>
+            {% if user.is_authenticated %}
+            <div class="add-review mb-4">
+                <form id="reviewForm">
+                    {% csrf_token %}
+                    <div class="feedback-stars mb-3">
+                        {% for i in "12345"|make_list %}
+                        <i class="far fa-star" data-rating="{{ forloop.counter }}"></i>
                         {% endfor %}
-                      </div>
-                      <a href="{% url 'book_room' room.id %}" class="btn btn-primary book-room-btn" data-room-id="{{ room.id }}">Đặt ngay</a>
                     </div>
-                  </div>
-                </div>
-              </div>
+                    <textarea class="form-control" name="comment" rows="3" placeholder="Nhập nhận xét của bạn..."></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Gửi đánh giá</button>
+                </form>
             </div>
-            {% endfor %}
+            {% endif %}
+
+            <div class="reviews">
+                {% for review in reviews %}
+                <div class="review-item card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title">{{ review.user.username }}</h5>
+                            <div class="star-rating">
+                                {% for i in "12345"|make_list %}
+                                <i class="fas fa-star {% if forloop.counter <= review.rating %}text-warning{% else %}text-secondary{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="card-text">{{ review.comment }}</p>
+                        <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
           </div>
+
+          <!-- Tiện ích -->
+         
         </div>
       </div>
     </div>
   </div>
 </div>
 
+{% endblock %}
+
 {% block javascript %}
 <script>
 $(document).ready(function() {
-    $('#roomTypeFilter').change(function() {
-        var selectedType = $(this).val();
-        if (selectedType) {
-            $('.room-card').hide();
-            $('.room-card[data-room-type="' + selectedType + '"]').show();
-        } else {
-            $('.room-card').show();
-        }
-    });
-
-    $('.book-room-btn').click(function(e) {
+    $('#hoursForm').on('submit', function(e) {
         e.preventDefault();
-        var roomId = $(this).data('room-id');
-        window.location.href = `/book-room/${roomId}/`;
+        
+        // Thêm loading state
+        const $btn = $('#updateTotal');
+        $btn.prop('disabled', true);
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Đang tính...');
+        
+        // Submit form
+        this.submit();
     });
 
-    // Xử lý form đặt phòng
-    $('.booking-form').submit(function(e) {
-        var startDate = new Date($('#startDate').val());
-        var endDate = new Date($('#endDate').val());
+    // Xử lý đánh giá sao
+    $('.feedback-stars i').hover(
+        function() {
+            const rating = $(this).data('rating');
+            $('.feedback-stars i').removeClass('fas').addClass('far');
+            $('.feedback-stars i').each(function(index) {
+                if (index < rating) {
+                    $(this).removeClass('far').addClass('fas');
+                }
+            });
+        },
+        function() {
+            $('.feedback-stars i').removeClass('fas').addClass('far');
+        }
+    );
+
+    // Kiểm tra form đặt phòng
+    $('#bookingForm').submit(function(e) {
+        const bookingDate = new Date($('#bookingDate').val());
+        const today = new Date();
         
-        if (endDate <= startDate) {
+        if (bookingDate < today) {
             e.preventDefault();
-            alert('Ngày trả phòng phải sau ngày nhận phòng');
+            alert('Ngày đặt phòng không hợp lệ');
             return false;
         }
     });
 
-    // Cập nhật ngày trả phòng tối thiểu khi chọn ngày nhận phòng
-    $('#startDate').change(function() {
-        var startDate = $(this).val();
-        $('#endDate').attr('min', startDate);
+    // Set giờ mặc định
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    $('#checkInTime').val(`${hours}:${minutes}`);
+
+    // Thêm vào phần JavaScript của template
+    $('#reviewForm').submit(function(e) {
+        e.preventDefault();
+        const rating = $('.feedback-stars i.fas').length;
+        const comment = $('textarea[name="comment"]').val();
+        
+        if (!rating) {
+            alert('Vui lòng chọn số sao đánh giá');
+            return;
+        }
+        
+        $.ajax({
+            url: `/pod/${podId}/review/`,
+            method: 'POST',
+            data: {
+                rating: rating,
+                comment: comment,
+                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+            },
+            success: function(response) {
+                alert(response.message);
+                location.reload();
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON?.message || 'Đã xảy ra lỗi');
+            }
+        });
     });
 });
 </script>
-{% endblock javascript %}
-
-{% endblock content %}
+{% endblock %}
