@@ -183,53 +183,59 @@
             </form>
           </div>
 
-          <!-- Thêm phần hiển thị đánh giá vào sau phần form đặt phòng -->
-          <div class="mt-4">
-            <h4>Đánh giá ({{ review_count }})</h4>
-            <div class="star-rating mb-2">
-                {% for i in "12345"|make_list %}
-                <i class="fas fa-star {% if forloop.counter <= avg_rating %}text-warning{% else %}text-secondary{% endif %}"></i>
-                {% endfor %}
-                <span class="ms-2">{{ avg_rating }}/5 ({{ review_count }} đánh giá)</span>
+          <!-- Form gửi feedback -->
+          <div class="card mt-4">
+            <div class="card-header">
+                <h5>Gửi đánh giá của bạn</h5>
             </div>
-
-            {% if user.is_authenticated %}
-            <div class="add-review mb-4">
-                <form id="reviewForm">
+            <div class="card-body">
+                <form method="POST" action="{% url 'add_feedback' pod.uid %}">
                     {% csrf_token %}
-                    <div class="feedback-stars mb-3">
-                        {% for i in "12345"|make_list %}
-                        <i class="far fa-star" data-rating="{{ forloop.counter }}"></i>
-                        {% endfor %}
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Đánh giá của bạn</label>
+                        <select class="form-select" name="rating" id="rating" required>
+                            <option value="">Chọn số sao</option>
+                            <option value="5">5 sao - Rất tốt</option>
+                            <option value="4">4 sao - Tốt</option>
+                            <option value="3">3 sao - Bình thường</option>
+                            <option value="2">2 sao - Không hài lòng</option>
+                            <option value="1">1 sao - Rất tệ</option>
+                        </select>
                     </div>
-                    <textarea class="form-control" name="comment" rows="3" placeholder="Nhập nhận xét của bạn..."></textarea>
-                    <button type="submit" class="btn btn-primary mt-2">Gửi đánh giá</button>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Nhận xét của bạn</label>
+                        <textarea class="form-control" name="comment" id="comment" rows="3" required 
+                                  placeholder="Hãy chia sẻ trải nghiệm của bạn..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
                 </form>
-            </div>
-            {% endif %}
-
-            <div class="reviews">
-                {% for review in reviews %}
-                <div class="review-item card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <h5 class="card-title">{{ review.user.username }}</h5>
-                            <div class="star-rating">
-                                {% for i in "12345"|make_list %}
-                                <i class="fas fa-star {% if forloop.counter <= review.rating %}text-warning{% else %}text-secondary{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <p class="card-text">{{ review.comment }}</p>
-                        <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
-                    </div>
-                </div>
-                {% endfor %}
             </div>
           </div>
 
-          <!-- Tiện ích -->
-         
+          <!-- Hiển thị feedback -->
+          <div class="card mt-4">
+            <div class="card-header">
+                <h5>Các đánh giá</h5>
+            </div>
+            <div class="card-body">
+                {% for feedback in pod.feedback_set.all %}
+                <div class="feedback-item mb-3 border-bottom pb-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ feedback.user.username }}</strong>
+                            <div class="text-warning">
+                                {% for i in ""|ljust:feedback.rating %}⭐{% endfor %}
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ feedback.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="mt-2 mb-0">{{ feedback.comment }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted">Chưa có đánh giá nào.</p>
+                {% endfor %}
+            </div>
+          </div>
         </div>
       </div>
     </div>

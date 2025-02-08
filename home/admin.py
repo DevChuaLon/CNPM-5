@@ -17,3 +17,11 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ['type', 'is_read', 'created_at']
     search_fields = ['user__username', 'title', 'message']
 
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('user', 'pod', 'rating', 'comment', 'created_at')
+    list_filter = ('rating', 'created_at', 'pod')
+    search_fields = ('user__username', 'pod__pod_name', 'comment')
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
+

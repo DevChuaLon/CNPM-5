@@ -418,3 +418,35 @@ def add_review(request, pod_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+@login_required
+@require_POST
+def add_feedback(request, pod_id):
+    try:
+        pod = get_object_or_404(Pod, uid=pod_id)
+        rating = int(request.POST.get('rating', 0))
+        comment = request.POST.get('comment', '').strip()
+        
+        # Validate input
+        if not (1 <= rating <= 5):
+            messages.error(request, 'Đánh giá phải từ 1 đến 5 sao')
+            return redirect('get_pod', uid=pod_id)
+            
+        if not comment:
+            messages.error(request, 'Vui lòng nhập nhận xét')
+            return redirect('get_pod', uid=pod_id)
+        
+        # Lưu feedback vào database
+        feedback = Feedback.objects.create(
+            user=request.user,
+            pod=pod,
+            rating=rating,
+            comment=comment
+        )
+        
+        messages.success(request, 'Cảm ơn bạn đã gửi đánh giá!')
+        return redirect('get_pod', uid=pod_id)
+        
+    except Exception as e:
+        messages.error(request, f'Lỗi khi gửi feedback: {str(e)}')
+        return redirect('get_pod', uid=pod_id)

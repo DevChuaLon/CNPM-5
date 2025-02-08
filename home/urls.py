@@ -37,7 +37,7 @@ urlpatterns = [
     path('notifications/mark-all-read/', 
          views.mark_all_notifications_as_read, 
          name='mark_all_notifications_as_read'),
-    path('pod/<str:pod_id>/review/', views.add_review, name='add_review'),
+    path('pod/<str:pod_id>/feedback/', views.add_feedback, name='add_feedback'),
 ]
 
 if settings.DEBUG:
