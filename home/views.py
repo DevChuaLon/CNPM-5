@@ -427,7 +427,6 @@ def add_feedback(request, pod_id):
         rating = int(request.POST.get('rating', 0))
         comment = request.POST.get('comment', '').strip()
         
-        # Validate input
         if not (1 <= rating <= 5):
             messages.error(request, 'Đánh giá phải từ 1 đến 5 sao')
             return redirect('get_pod', uid=pod_id)
@@ -436,8 +435,7 @@ def add_feedback(request, pod_id):
             messages.error(request, 'Vui lòng nhập nhận xét')
             return redirect('get_pod', uid=pod_id)
         
-        # Lưu feedback vào database
-        feedback = Feedback.objects.create(
+        Feedback.objects.create(
             user=request.user,
             pod=pod,
             rating=rating,
