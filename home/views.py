@@ -484,8 +484,8 @@ def create_payment(request, pod_id):
         # Tạo URL thanh toán VNPay
         vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
         vnp_ReturnUrl = f"http://{request.get_host()}/payment/vnpay_return/"
-        vnp_TmnCode = "YOUR_TMN_CODE"  # Mã website tại VNPAY 
-        vnp_HashSecret = "YOUR_HASH_SECRET" # Chuỗi bí mật
+        vnp_TmnCode = "TH5SMNHX"  # Mã website tại VNPAY 
+        vnp_HashSecret = "JCOGQPA8WGH8SQA35MTKL70CICU83GRJ" # Chuỗi bí mật
         
         vnp_TxnRef = f"{payment.id}"  # Mã đơn hàng
         vnp_OrderInfo = f"Thanh toan don hang: {vnp_TxnRef}"
@@ -539,7 +539,7 @@ def get_client_ip(request):
 def vnpay_return(request):
     inputData = request.GET
     if inputData:
-        vnp_HashSecret = "YOUR_HASH_SECRET"  # Secret key
+        vnp_HashSecret = "JCOGQPA8WGH8SQA35MTKL70CICU83GRJ"  # Secret key
         inputData = inputData.dict()
         vnp_SecureHash = inputData.pop('vnp_SecureHash')
         
@@ -660,14 +660,16 @@ def payment_return(request):
     vnp_ResponseCode = request.GET.get('vnp_ResponseCode')
     vnp_TxnRef = request.GET.get('vnp_TxnRef')
     
-    if vnp_ResponseCode == "00":
-        try:
-            # Cập nhật trạng thái booking
-            booking = PodBooking.objects.get(uid=vnp_TxnRef)
+    try:
+        # Tìm booking dựa trên vnp_TxnRef
+        booking = PodBooking.objects.get(uid=vnp_TxnRef)
+        
+        if vnp_ResponseCode == "00":
+            # Thanh toán thành công
             booking.status = 'completed'
             booking.save()
             
-            # Tạo thông báo
+            # Tạo thông báo thanh toán thành công
             Notification.objects.create(
                 user=booking.user,
                 type='booking',
@@ -676,12 +678,25 @@ def payment_return(request):
             )
             
             messages.success(request, 'Thanh toán thành công!')
-            return redirect('booking_history')
+        else:
+            # Thanh toán thất bại hoặc bị hủy
+            booking.status = 'cancelled'  # Cập nhật trạng thái thành cancelled
+            booking.save()
             
-        except PodBooking.DoesNotExist:
-            messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
-    else:
-        messages.error(request, 'Thanh toán thất bại!')
+            # Tạo thông báo hủy thanh toán
+            Notification.objects.create(
+                user=booking.user,
+                type='booking',
+                title='Thanh toán không thành công',
+                message=f'Đơn đặt phòng {booking.pod.pod_name} đã bị hủy do thanh toán không thành công'
+            )
+            
+            messages.error(request, 'Thanh toán không thành công! Đơn đặt phòng đã bị hủy.')
+            
+    except PodBooking.DoesNotExist:
+        messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
+    except Exception as e:
+        messages.error(request, f'Đã xảy ra lỗi: {str(e)}')
     
     return redirect('booking_history')
 
