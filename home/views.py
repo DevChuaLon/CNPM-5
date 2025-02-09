@@ -22,6 +22,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from django.urls import reverse
 import os
 import pickle
+import json
 
 # Thêm dòng này ở đầu file, sau các import
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Cho phép HTTP trong môi trường development
@@ -140,6 +141,24 @@ def index(request):
         page = request.GET.get('page', 1)
         pods = paginator.get_page(page)
         
+        calendar_events = []
+        if request.user.is_authenticated:
+            bookings = PodBooking.objects.filter(
+                user=request.user,
+                status='active'
+            ).select_related('pod')
+            
+            for booking in bookings:
+                calendar_events.append({
+                    'title': booking.pod.pod_name,
+                    'start': booking.start_date.strftime('%Y-%m-%d'),
+                    'backgroundColor': '#198754',
+                    'borderColor': '#198754',
+                    'extendedProps': {
+                        'hours': booking.hours
+                    }
+                })
+        
         context = {
             'pods': pods,
             'amenities': amenities,
@@ -148,7 +167,8 @@ def index(request):
             'search': search,
             'start_date': start_date,
             'end_date': end_date,
-            'today': date.today().strftime('%Y-%m-%d')
+            'today': date.today().strftime('%Y-%m-%d'),
+            'calendar_events': json.dumps(calendar_events)
         }
         
         return render(request, 'home/index.html', context)

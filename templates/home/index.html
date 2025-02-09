@@ -196,7 +196,8 @@ Welcome To WORK CHILL.com
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Loại Phòng</label>
-                            <select name="selectAmenity" class="form-select" multiple>
+                            <select name="selectAmenity" class="form-select">
+                                <option value="">Tất cả loại phòng</option>
                                 {% for amenity in amenities %}
                                 <option value="{{ amenity.amenity_name }}" 
                                         {% if amenity.amenity_name in selected_amenities %}selected{% endif %}>
@@ -309,15 +310,15 @@ Welcome To WORK CHILL.com
     </main>
 
     <!-- Modal Calendar -->
-    <div class="modal fade" id="calendarModal" tabindex="-1">
+    <div class="modal fade" id="calendarModal" tabindex="-1" aria-labelledby="calendarModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Lịch đặt phòng của bạn</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="calendarModalLabel">Lịch đặt phòng của bạn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="calendar"></div>
+                    <div id="calendar" style="height: 600px;"></div>
                 </div>
             </div>
         </div>
@@ -330,10 +331,14 @@ Welcome To WORK CHILL.com
 </main>
 
 {% block js %}
+<!-- Đảm bảo các script cần thiết đã được load -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Khởi tạo calendar ngay khi trang load
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
         locale: 'vi',
@@ -348,17 +353,27 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(
                 'Phòng: ' + info.event.title + '\n' +
                 'Ngày: ' + info.event.start.toLocaleDateString('vi-VN') + '\n' +
-                'Số giờ: ' + info.event.extendedProps.hours + ' giờ\n' +
-                'Trạng thái: ' + info.event.extendedProps.status
+                'Số giờ: ' + info.event.extendedProps.hours + ' giờ'
             );
         }
     });
-    
-    // Render calendar khi modal được mở
-    document.getElementById('calendarModal').addEventListener('shown.bs.modal', function () {
+
+    // Xử lý sự kiện khi modal được mở
+    $('#calendarModal').on('shown.bs.modal', function () {
         calendar.render();
-        calendar.updateSize(); // Đảm bảo calendar được render đúng kích thước
+        calendar.updateSize();
     });
+
+    // Đảm bảo calendar được render khi modal mở
+    var modalButton = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#calendarModal"]');
+    if (modalButton) {
+        modalButton.addEventListener('click', function() {
+            setTimeout(function() {
+                calendar.render();
+                calendar.updateSize();
+            }, 100);
+        });
+    }
 });
 </script>
 {% endblock %}
