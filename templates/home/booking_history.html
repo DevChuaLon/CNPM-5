@@ -55,17 +55,19 @@
                         <p>
                             <i class="fas fa-info-circle text-primary"></i>
                             <strong>Trạng thái:</strong> 
-                            <span class="badge {% if booking.status == 'active' %}bg-success
+                            <span class="badge {% if booking.status == 'completed' %}bg-success
                                               {% elif booking.status == 'cancelled' %}bg-danger
+                                              {% elif booking.status == 'active' %}bg-primary
                                               {% else %}bg-secondary{% endif %}">
-                                {% if booking.status == 'active' %}
-                                    <i class="fas fa-check-circle"></i>
+                                {% if booking.status == 'completed' %}
+                                    <i class="fas fa-check-circle"></i> Đã thanh toán
                                 {% elif booking.status == 'cancelled' %}
-                                    <i class="fas fa-times-circle"></i>
+                                    <i class="fas fa-times-circle"></i> Đã hủy
+                                {% elif booking.status == 'active' %}
+                                    <i class="fas fa-clock"></i> Đang chờ
                                 {% else %}
-                                    <i class="fas fa-clock"></i>
+                                    <i class="fas fa-clock"></i> {{ booking.get_status_display }}
                                 {% endif %}
-                                {{ booking.get_status_display }}
                             </span>
                         </p>
                     </div>

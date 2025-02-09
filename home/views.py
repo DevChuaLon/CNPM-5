@@ -594,29 +594,22 @@ def process_payment(request, pod_id):
         # Tính tổng tiền
         total_amount = pod.pod_price * hours
         
-        # Tạo booking record
+        # Tạo booking record với PodBooking thay vì Booking
         booking = PodBooking.objects.create(
             user=request.user,
             pod=pod,
             start_date=booking_date,
-            end_date=booking_date,  # Vì chỉ thuê theo giờ nên start_date = end_date
+            end_date=booking_date,
             hours=hours,
             total_amount=total_amount,
-            booking_type='Pre Paid',  # hoặc tùy theo logic của bạn
-            status='active'
+            booking_type='Pre Paid',
+            status='pending'  # Đặt status là pending khi mới tạo
         )
         
-        # Lưu thông tin vào session
-        request.session['booking_info'] = {
-            'booking_id': str(booking.uid),
-            'pod_id': str(pod.uid),
-            'booking_date': booking_date,
-            'check_in_time': check_in_time,
-            'hours': hours,
-            'total_amount': total_amount
-        }
+        # Lưu booking_id vào session
+        request.session['booking_id'] = str(booking.uid)
         
-        # Format ngày để hiển thị đẹp hơn
+        # Format ngày để hiển thị
         try:
             date_obj = datetime.strptime(booking_date, '%Y-%m-%d').date()
             formatted_date = date_obj.strftime('%d/%m/%Y')
@@ -638,55 +631,87 @@ def process_payment(request, pod_id):
 
 def process_payment_method(request):
     if request.method == 'POST':
-        booking_date = request.POST.get('booking_date')
-        check_in_time = request.POST.get('check_in_time')
-        hours = request.POST.get('hours')
-        total_amount = request.POST.get('total_amount')
-        payment_method = request.POST.get('payment_method')
-
-        if payment_method == 'vnpay':
-            # Tạo mã đơn hàng
-            order_id = str(uuid.uuid4()).replace('-', '')[:12]
+        booking_id = request.session.get('booking_id')
+        if not booking_id:
+            messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
+            return redirect('home')
             
-            # Tạo mô tả đơn hàng
-            order_desc = f"Thanh toan dat phong ngay {booking_date}"
+        try:
+            booking = PodBooking.objects.get(uid=booking_id)
             
             # Tạo URL thanh toán VNPay
             payment_url = generate_vnpay_payment_url(
-                order_id=order_id,
-                amount=total_amount,
-                order_desc=order_desc
+                order_id=str(booking.uid),
+                amount=float(booking.total_amount),
+                order_desc=f"Thanh toan dat phong ngay {booking.start_date}"
             )
             
-            # Lưu thông tin đơn hàng vào session để kiểm tra sau này
-            request.session['booking_info'] = {
-                'order_id': order_id,
-                'booking_date': booking_date,
-                'check_in_time': check_in_time,
-                'hours': hours,
-                'total_amount': total_amount
-            }
-            
             return redirect(payment_url)
+            
+        except PodBooking.DoesNotExist:
+            messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
+            return redirect('home')
+            
+    return redirect('home')
 
+@csrf_exempt  # Thêm decorator này vì VNPay không gửi CSRF token
 def payment_return(request):
-    # Xử lý kết quả trả về từ VNPay
+    # Lấy các tham số từ VNPay trả về
     vnp_ResponseCode = request.GET.get('vnp_ResponseCode')
+    vnp_TxnRef = request.GET.get('vnp_TxnRef')
+    
     if vnp_ResponseCode == "00":
-        # Thanh toán thành công
-        booking_info = request.session.get('booking_info', {})
-        
-        # Lưu thông tin đặt phòng vào database
-        # ... code xử lý lưu booking ...
-        
-        return render(request, 'home/payment_success.html', {
-            'booking_info': booking_info
-        })
+        try:
+            # Cập nhật trạng thái booking
+            booking = PodBooking.objects.get(uid=vnp_TxnRef)
+            booking.status = 'completed'
+            booking.save()
+            
+            # Tạo thông báo
+            Notification.objects.create(
+                user=booking.user,
+                type='booking',
+                title='Thanh toán thành công',
+                message=f'Bạn đã thanh toán thành công cho đơn đặt phòng {booking.pod.pod_name}'
+            )
+            
+            messages.success(request, 'Thanh toán thành công!')
+            return redirect('booking_history')
+            
+        except PodBooking.DoesNotExist:
+            messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
     else:
-        # Thanh toán thất bại
-        return render(request, 'home/payment_failed.html')
+        messages.error(request, 'Thanh toán thất bại!')
+    
+    return redirect('booking_history')
 
 @login_required
 def payment_history(request):
     # Thay vì render trang payment_history, chuyển hướng đến booking_history
     return redirect('booking_history')
+
+def payment_success(request):
+    booking_id = request.session.get('booking_id')
+    if booking_id:
+        try:
+            # Thay đổi từ Booking sang PodBooking
+            booking = PodBooking.objects.get(uid=booking_id)
+            booking.status = 'completed'  # Cập nhật trạng thái thành completed
+            booking.save()
+            
+            # Tạo thông báo
+            Notification.objects.create(
+                user=request.user,
+                type='booking',
+                title='Thanh toán thành công',
+                message=f'Bạn đã thanh toán thành công cho đơn đặt phòng {booking.pod.pod_name}'
+            )
+            
+            # Xóa booking_id khỏi session sau khi đã xử lý
+            del request.session['booking_id']
+            
+            messages.success(request, 'Thanh toán thành công!')
+            return redirect('booking_history')
+        except PodBooking.DoesNotExist:
+            messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
+    return redirect('home')

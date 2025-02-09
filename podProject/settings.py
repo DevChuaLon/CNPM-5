@@ -153,7 +153,7 @@ LOGIN_URL = 'signin'  # URL chuyển hướng khi chưa đăng nhập
 LOGIN_REDIRECT_URL = 'index'  # URL sau khi đăng nhập thành công
 
 # VNPay Configuration
-VNPAY_TMN_CODE = 'TH5SMNHX'  # Mã website tại VNPAY 
-VNPAY_HASH_SECRET_KEY = 'JCOGQPA8WGH8SQA35MTKL70CICU83GRJ'  # Chuỗi bí mật
-VNPAY_PAYMENT_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'  # URL thanh toán cho môi trường test
-VNPAY_RETURN_URL = 'http://127.0.0.1:8000/payment_return/'  # URL nhận kết quả thanh toán
+VNPAY_TMN_CODE = 'TH5SMNHX'
+VNPAY_HASH_SECRET_KEY = 'JCOGQPA8WGH8SQA35MTKL70CICU83GRJ'
+VNPAY_PAYMENT_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'
+VNPAY_RETURN_URL = 'http://127.0.0.1:8000/payment/vnpay_return/'  # Đảm bảo có /payment/ ở đầu

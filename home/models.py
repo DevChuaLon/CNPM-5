@@ -43,12 +43,12 @@ class PodImages(BaseModel):
     images = models.ImageField(upload_to='pods')
 
 class PodBooking(BaseModel):
-    pod = models.ForeignKey(Pod, related_name="pod_bookings", on_delete=models.CASCADE)
-    user = models.ForeignKey(User, related_name="user_bookings", on_delete=models.CASCADE)
+    pod = models.ForeignKey(Pod, related_name="pod_bookings_v1", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name="user_bookings_v1", on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
-    hours = models.IntegerField(default=1)  # Thêm trường số giờ
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Thêm trường tổng tiền
+    hours = models.IntegerField(default=1)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     booking_type = models.CharField(max_length=100, choices=(
         ('Pre Paid', 'Pre Paid'),
         ('Post Paid', 'Post Paid')
@@ -63,10 +63,9 @@ class PodBooking(BaseModel):
         return f'{self.pod.pod_name} - {self.user.username}'
 
     def get_hours(self):
-        """Tính số giờ từ check_in và check_out"""
         if hasattr(self, 'hours'):
             return self.hours
-        return getattr(self, 'hours', 1)  # Trả về 1 nếu không có thông tin
+        return getattr(self, 'hours', 1)
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = (
@@ -167,3 +166,34 @@ class Payment(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class Booking(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    )
+    
+    pod = models.ForeignKey(Pod, related_name="pod_bookings_v2", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name="user_bookings_v2", on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    hours = models.IntegerField(default=1)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    booking_type = models.CharField(max_length=100, choices=(
+        ('Pre Paid', 'Pre Paid'),
+        ('Post Paid', 'Post Paid')
+    ))
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    
+    def __str__(self) -> str:
+        return f'{self.pod.pod_name} - {self.user.username}'
+
+    def get_hours(self):
+        if hasattr(self, 'hours'):
+            return self.hours
+        return getattr(self, 'hours', 1)
