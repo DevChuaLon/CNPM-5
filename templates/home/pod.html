@@ -123,14 +123,14 @@
           
           <!-- Thông tin giá và đặt phòng -->
           <div class="price-card">
-            <form method="POST" class="booking-form" id="bookingForm">
+            <form method="POST" action="{% url 'process_payment' pod.uid %}" id="bookingForm">
               {% csrf_token %}
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label">Ngày đặt phòng</label>
                     <input type="date" class="form-control" name="bookingDate" id="bookingDate" 
-                           min="{{ today }}" required>
+                           min="{{ today|date:'Y-m-d' }}" required>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -141,45 +141,24 @@
                 </div>
               </div>
 
-              <!-- Form bao quanh phần nhập số giờ -->
-              <form method="post" id="hoursForm">
-                {% csrf_token %}
-                <div class="mb-3">
-                  <label for="hours" class="form-label">Số giờ thuê</label>
-                  <div class="d-flex align-items-center">
-                    <input type="number" 
-                           class="form-control" 
-                           name="hours" 
-                           id="hours" 
-                           min="1" 
-                           max="24" 
-                           value="{{ hours|default:1 }}" 
-                           required 
-                           style="width: 100px;">
-                    <span class="ms-2 me-2">giờ</span>
-                    <button type="submit" 
-                            class="btn btn-primary" 
-                            id="updateTotal">
-                      <i class="fas fa-sync-alt"></i> Xác nhận
-                    </button>
-                  </div>
-                </div>
-              </form>
-
-              <!-- Phần hiển thị tổng tiền -->
               <div class="mb-3">
-                <label class="form-label">Tổng số tiền phải thanh toán</label>
+                <label for="hours" class="form-label">Số giờ thuê</label>
                 <div class="d-flex align-items-center">
-                  <output class="form-control" 
-                          id="totalAmount" 
-                          style="width: 150px; background-color: #f8f9fa;">
-                    {{ total_amount|intcomma }}
-                  </output>
-                  <span class="ms-2">VNĐ</span>
+                  <input type="number" 
+                         class="form-control" 
+                         name="hours" 
+                         id="hours" 
+                         min="1" 
+                         max="24" 
+                         value="1" 
+                         required 
+                         style="width: 100px;">
+                  <span class="ms-2">giờ</span>
+                  <button type="submit" class="btn btn-primary ms-2">
+                    <i class="fas fa-shopping-cart"></i> Đặt phòng ngay
+                  </button>
                 </div>
               </div>
-
-              <button type="submit" class="btn btn-primary btn-lg w-100">Đặt phòng ngay</button>
             </form>
           </div>
 
@@ -247,16 +226,36 @@
 {% block javascript %}
 <script>
 $(document).ready(function() {
-    $('#hoursForm').on('submit', function(e) {
-        e.preventDefault();
+    // Set ngày tối thiểu là ngày hiện tại
+    const today = new Date().toISOString().split('T')[0];
+    $('#bookingDate').attr('min', today);
+
+    // Set giờ mặc định
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    $('#checkInTime').val(`${hours}:${minutes}`);
+
+    // Xử lý form submit
+    $('#bookingForm').on('submit', function(e) {
+        const bookingDate = $('#bookingDate').val();
+        const checkInTime = $('#checkInTime').val();
+        const hours = $('#hours').val();
         
-        // Thêm loading state
-        const $btn = $('#updateTotal');
-        $btn.prop('disabled', true);
-        $btn.html('<i class="fas fa-spinner fa-spin"></i> Đang tính...');
-        
-        // Submit form
-        this.submit();
+        if (!bookingDate || !checkInTime || !hours) {
+            e.preventDefault();
+            alert('Vui lòng điền đầy đủ thông tin đặt phòng');
+            return;
+        }
+
+        // Kiểm tra ngày đặt phòng
+        const selectedDate = new Date(bookingDate);
+        const todayDate = new Date();
+        if (selectedDate < todayDate) {
+            e.preventDefault();
+            alert('Ngày đặt phòng không hợp lệ');
+            return;
+        }
     });
 
     // Xử lý đánh giá sao
@@ -274,53 +273,6 @@ $(document).ready(function() {
             $('.feedback-stars i').removeClass('fas').addClass('far');
         }
     );
-
-    // Kiểm tra form đặt phòng
-    $('#bookingForm').submit(function(e) {
-        const bookingDate = new Date($('#bookingDate').val());
-        const today = new Date();
-        
-        if (bookingDate < today) {
-            e.preventDefault();
-            alert('Ngày đặt phòng không hợp lệ');
-            return false;
-        }
-    });
-
-    // Set giờ mặc định
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    $('#checkInTime').val(`${hours}:${minutes}`);
-
-    // Thêm vào phần JavaScript của template
-    $('#reviewForm').submit(function(e) {
-        e.preventDefault();
-        const rating = $('.feedback-stars i.fas').length;
-        const comment = $('textarea[name="comment"]').val();
-        
-        if (!rating) {
-            alert('Vui lòng chọn số sao đánh giá');
-            return;
-        }
-        
-        $.ajax({
-            url: `/pod/${podId}/review/`,
-            method: 'POST',
-            data: {
-                rating: rating,
-                comment: comment,
-                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
-            },
-            success: function(response) {
-                alert(response.message);
-                location.reload();
-            },
-            error: function(xhr) {
-                alert(xhr.responseJSON?.message || 'Đã xảy ra lỗi');
-            }
-        });
-    });
 });
 </script>
 {% endblock %}

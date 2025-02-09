@@ -9,6 +9,13 @@ from django.core.paginator import Paginator
 from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+import datetime
+import hashlib
+import hmac
+import urllib.parse
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+import uuid
 
 def check_booking(uid, room_count, start_date, end_date):
     try:
@@ -448,3 +455,193 @@ def add_feedback(request, pod_id):
     except Exception as e:
         messages.error(request, f'Lỗi khi gửi feedback: {str(e)}')
         return redirect('get_pod', uid=pod_id)
+
+@login_required
+def payment_history(request):
+    payments = Payment.objects.filter(user=request.user).exclude(status='pending')
+    return render(request, 'home/payment_history.html', {'payments': payments})
+
+@login_required
+def pending_payments(request):
+    pending = Payment.objects.filter(user=request.user, status='pending')
+    return render(request, 'home/pending_payments.html', {'pending_payments': pending})
+
+def create_payment(request, pod_id):
+    pod = get_object_or_404(Pod, uid=pod_id)
+    if request.method == 'POST':
+        # Tạo payment record
+        payment = Payment.objects.create(
+            user=request.user,
+            pod=pod,
+            amount=pod.pod_price,
+            description=f"Thanh toán đặt phòng: {pod.pod_name}",
+            status=Payment.PENDING
+        )
+        
+        # Tạo URL thanh toán VNPay
+        vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
+        vnp_ReturnUrl = f"http://{request.get_host()}/payment/vnpay_return/"
+        vnp_TmnCode = "YOUR_TMN_CODE"  # Mã website tại VNPAY 
+        vnp_HashSecret = "YOUR_HASH_SECRET" # Chuỗi bí mật
+        
+        vnp_TxnRef = f"{payment.id}"  # Mã đơn hàng
+        vnp_OrderInfo = f"Thanh toan don hang: {vnp_TxnRef}"
+        vnp_OrderType = "billpayment"
+        vnp_Amount = int(float(payment.amount) * 100)
+        vnp_Locale = "vn"
+        vnp_IpAddr = get_client_ip(request)
+        vnp_CreateDate = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        
+        # Tạo hash data
+        inputData = {
+            "vnp_Version": "2.1.0",
+            "vnp_Command": "pay",
+            "vnp_TmnCode": vnp_TmnCode,
+            "vnp_Amount": vnp_Amount,
+            "vnp_CreateDate": vnp_CreateDate,
+            "vnp_CurrCode": "VND",
+            "vnp_IpAddr": vnp_IpAddr,
+            "vnp_Locale": vnp_Locale,
+            "vnp_OrderInfo": vnp_OrderInfo,
+            "vnp_OrderType": vnp_OrderType,
+            "vnp_ReturnUrl": vnp_ReturnUrl,
+            "vnp_TxnRef": vnp_TxnRef,
+        }
+        
+        inputData = sorted(inputData.items())
+        hashData = "&".join([f"{urllib.parse.quote_plus(str(item[0]))}={urllib.parse.quote_plus(str(item[1]))}" for item in inputData])
+        
+        hashValue = hmac.new(
+            vnp_HashSecret.encode('utf-8'),
+            hashData.encode('utf-8'),
+            hashlib.sha512
+        ).hexdigest()
+        
+        inputData.append(('vnp_SecureHash', hashValue))
+        vnpay_payment_url = vnp_Url + "?" + hashData + "&vnp_SecureHash=" + hashValue
+        
+        return redirect(vnpay_payment_url)
+    
+    return redirect('pod_detail', pod_id=pod_id)
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+@csrf_exempt
+def vnpay_return(request):
+    inputData = request.GET
+    if inputData:
+        vnp_HashSecret = "YOUR_HASH_SECRET"  # Secret key
+        inputData = inputData.dict()
+        vnp_SecureHash = inputData.pop('vnp_SecureHash')
+        
+        # Kiểm tra checksum
+        inputData = sorted(inputData.items())
+        hashData = "&".join([f"{urllib.parse.quote_plus(str(item[0]))}={urllib.parse.quote_plus(str(item[1]))}" for item in inputData])
+        hashValue = hmac.new(
+            vnp_HashSecret.encode('utf-8'),
+            hashData.encode('utf-8'),
+            hashlib.sha512
+        ).hexdigest()
+        
+        if hashValue == vnp_SecureHash:
+            payment_id = inputData.get('vnp_TxnRef')
+            payment = get_object_or_404(Payment, id=payment_id)
+            
+            if inputData.get('vnp_ResponseCode') == '00':
+                payment.status = Payment.COMPLETED
+                payment.save()
+                messages.success(request, 'Thanh toán thành công!')
+            else:
+                payment.status = Payment.FAILED
+                payment.save()
+                messages.error(request, 'Thanh toán thất bại!')
+                
+            return redirect('payment_history')
+    
+    messages.error(request, 'Thanh toán không hợp lệ!')
+    return redirect('payment_history')
+
+def process_payment(request, pod_id):
+    pod = get_object_or_404(Pod, uid=pod_id)
+    
+    if request.method == 'POST':
+        booking_date = request.POST.get('bookingDate')
+        check_in_time = request.POST.get('checkInTime')
+        hours = int(request.POST.get('hours', 1))
+        
+        # Tính tổng tiền
+        total_amount = pod.pod_price * hours
+        
+        # Lưu thông tin vào session
+        request.session['booking_info'] = {
+            'pod_id': str(pod.uid),
+            'booking_date': booking_date,
+            'check_in_time': check_in_time,
+            'hours': hours,
+            'total_amount': total_amount
+        }
+        
+        # Format ngày để hiển thị đẹp hơn
+        try:
+            # Chuyển đổi từ chuỗi YYYY-MM-DD sang đối tượng date
+            date_obj = datetime.strptime(booking_date, '%Y-%m-%d').date()
+            # Format lại thành DD/MM/YYYY
+            formatted_date = date_obj.strftime('%d/%m/%Y')
+        except:
+            formatted_date = booking_date  # Giữ nguyên nếu có lỗi
+        
+        context = {
+            'pod': pod,
+            'booking_date': formatted_date,
+            'check_in_time': check_in_time,
+            'hours': hours,
+            'total_amount': total_amount
+        }
+        
+        return render(request, 'home/payment.html', context)
+    
+    return redirect('pod_detail', pod_id=pod_id)
+
+def process_payment_method(request):
+    if request.method == 'POST':
+        booking_info = request.session.get('booking_info')
+        payment_method = request.POST.get('payment_method')
+        
+        if not booking_info:
+            messages.error(request, 'Không tìm thấy thông tin đặt phòng')
+            return redirect('home')
+        
+        # Lấy thông tin pod
+        pod = get_object_or_404(Pod, uid=booking_info['pod_id'])
+        
+        # Tạo payment record
+        payment = Payment.objects.create(
+            user=request.user,
+            pod=pod,
+            amount=booking_info['total_amount'],
+            description=f"Thanh toán đặt phòng: {pod.pod_name}",
+            status=Payment.PENDING
+        )
+        
+        if payment_method == 'vnpay':
+            # Xử lý thanh toán VNPay
+            return redirect_to_vnpay(request, payment)
+        elif payment_method == 'momo':
+            # Xử lý thanh toán MoMo
+            return redirect_to_momo(request, payment)
+    
+    return redirect('home')
+
+def redirect_to_vnpay(request, payment):
+    # Thêm code xử lý redirect sang VNPay
+    pass
+
+def redirect_to_momo(request, payment):
+    # Thêm code xử lý redirect sang MoMo
+    pass

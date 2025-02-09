@@ -1,0 +1,12 @@
+.badge {
+    padding: 0.5em 1em;
+    font-size: 0.875em;
+}
+
+.table-responsive {
+    margin-top: 20px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+} 

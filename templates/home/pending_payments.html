@@ -1,0 +1,35 @@
+{% extends 'home/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Thanh toán chờ xử lý</h2>
+    {% if pending_payments %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Ngày tạo</th>
+                        <th>Mô tả</th>
+                        <th>Số tiền</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in pending_payments %}
+                    <tr>
+                        <td>{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>{{ payment.description }}</td>
+                        <td>{{ payment.amount }} VNĐ</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">Chờ xử lý</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>Không có thanh toán nào đang chờ xử lý.</p>
+    {% endif %}
+</div>
+{% endblock %} 

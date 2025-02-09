@@ -17,10 +17,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from home import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('home.urls')),
+    path('payment/history/', views.payment_history, name='payment_history'),
+    path('payment/pending/', views.pending_payments, name='pending_payments'),
+    path('payment/create/<uuid:pod_id>/', views.create_payment, name='create_payment'),
+    path('payment/vnpay_return/', views.vnpay_return, name='vnpay_return'),
+    path('payment/process/<uuid:pod_id>/', views.process_payment, name='process_payment'),
+    path('payment/method/', views.process_payment_method, name='process_payment_method'),
 ]
 
 if settings.DEBUG:

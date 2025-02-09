@@ -151,3 +151,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_URL = 'signin'  # URL chuyển hướng khi chưa đăng nhập
 LOGIN_REDIRECT_URL = 'index'  # URL sau khi đăng nhập thành công
+
+# VNPay Configuration
+VNPAY_TMN_CODE = "TH5SMNHX"  # Mã website tại VNPAY 
+VNPAY_HASH_SECRET_KEY = "JCOGQPA8WGH8SQA35MTKL70CICU83GRJ"  # Chuỗi bí mật
+VNPAY_PAYMENT_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"  # URL thanh toán cho môi trường test
