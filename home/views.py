@@ -16,6 +16,7 @@ import urllib.parse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import uuid
+import json
 
 def check_booking(uid, room_count, start_date, end_date):
     try:
@@ -131,6 +132,24 @@ def index(request):
         page = request.GET.get('page', 1)
         pods = paginator.get_page(page)
         
+        # Thêm dữ liệu cho calendar
+        if request.user.is_authenticated:
+            bookings = PodBooking.objects.filter(
+                user=request.user,
+                status='active'
+            ).select_related('pod')
+            
+            calendar_events = []
+            for booking in bookings:
+                calendar_events.append({
+                    'title': booking.pod.pod_name,
+                    'start': booking.start_date.strftime('%Y-%m-%d'),
+                    'backgroundColor': '#198754',  # màu xanh cho booking active
+                    'borderColor': '#198754'
+                })
+        else:
+            calendar_events = []
+
         context = {
             'pods': pods,
             'amenities': amenities,
@@ -139,7 +158,8 @@ def index(request):
             'search': search,
             'start_date': start_date,
             'end_date': end_date,
-            'today': date.today().strftime('%Y-%m-%d')
+            'today': date.today().strftime('%Y-%m-%d'),
+            'calendar_events': json.dumps(calendar_events)  # Chuyển đổi sang JSON
         }
         
         return render(request, 'home/index.html', context)
