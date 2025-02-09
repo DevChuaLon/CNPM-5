@@ -47,23 +47,13 @@
                         <input type="hidden" name="total_amount" value="{{ total_amount }}">
                         
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <div class="payment-method-card" onclick="selectPayment('vnpay')">
                                     <input type="radio" name="payment_method" value="vnpay" id="vnpay" class="d-none" required>
                                     <label for="vnpay" class="d-block p-3 border rounded text-center">
                                         <i class="fas fa-credit-card fa-2x text-primary"></i>
                                         <h5 class="mb-0 mt-2">VNPay</h5>
                                         <p class="mb-0 text-muted">Thanh toán qua VNPay</p>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="payment-method-card" onclick="selectPayment('momo')">
-                                    <input type="radio" name="payment_method" value="momo" id="momo" class="d-none" required>
-                                    <label for="momo" class="d-block p-3 border rounded text-center">
-                                        <i class="fas fa-wallet fa-2x text-danger"></i>
-                                        <h5 class="mb-0 mt-2">MoMo</h5>
-                                        <p class="mb-0 text-muted">Thanh toán qua MoMo</p>
                                     </label>
                                 </div>
                             </div>

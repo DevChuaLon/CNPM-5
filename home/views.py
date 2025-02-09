@@ -16,6 +16,7 @@ import urllib.parse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import uuid
+from .utils import generate_vnpay_payment_url
 
 def check_booking(uid, room_count, start_date, end_date):
     try:
@@ -637,41 +638,53 @@ def process_payment(request, pod_id):
 
 def process_payment_method(request):
     if request.method == 'POST':
-        booking_info = request.session.get('booking_info')
+        booking_date = request.POST.get('booking_date')
+        check_in_time = request.POST.get('check_in_time')
+        hours = request.POST.get('hours')
+        total_amount = request.POST.get('total_amount')
         payment_method = request.POST.get('payment_method')
-        
-        if not booking_info:
-            messages.error(request, 'Không tìm thấy thông tin đặt phòng')
-            return redirect('home')
-        
-        # Lấy thông tin pod
-        pod = get_object_or_404(Pod, uid=booking_info['pod_id'])
-        
-        # Tạo payment record
-        payment = Payment.objects.create(
-            user=request.user,
-            pod=pod,
-            amount=booking_info['total_amount'],
-            description=f"Thanh toán đặt phòng: {pod.pod_name}",
-            status=Payment.PENDING
-        )
-        
+
         if payment_method == 'vnpay':
-            # Xử lý thanh toán VNPay
-            return redirect_to_vnpay(request, payment)
-        elif payment_method == 'momo':
-            # Xử lý thanh toán MoMo
-            return redirect_to_momo(request, payment)
-    
-    return redirect('home')
+            # Tạo mã đơn hàng
+            order_id = str(uuid.uuid4()).replace('-', '')[:12]
+            
+            # Tạo mô tả đơn hàng
+            order_desc = f"Thanh toan dat phong ngay {booking_date}"
+            
+            # Tạo URL thanh toán VNPay
+            payment_url = generate_vnpay_payment_url(
+                order_id=order_id,
+                amount=total_amount,
+                order_desc=order_desc
+            )
+            
+            # Lưu thông tin đơn hàng vào session để kiểm tra sau này
+            request.session['booking_info'] = {
+                'order_id': order_id,
+                'booking_date': booking_date,
+                'check_in_time': check_in_time,
+                'hours': hours,
+                'total_amount': total_amount
+            }
+            
+            return redirect(payment_url)
 
-def redirect_to_vnpay(request, payment):
-    # Thêm code xử lý redirect sang VNPay
-    pass
-
-def redirect_to_momo(request, payment):
-    # Thêm code xử lý redirect sang MoMo
-    pass
+def payment_return(request):
+    # Xử lý kết quả trả về từ VNPay
+    vnp_ResponseCode = request.GET.get('vnp_ResponseCode')
+    if vnp_ResponseCode == "00":
+        # Thanh toán thành công
+        booking_info = request.session.get('booking_info', {})
+        
+        # Lưu thông tin đặt phòng vào database
+        # ... code xử lý lưu booking ...
+        
+        return render(request, 'home/payment_success.html', {
+            'booking_info': booking_info
+        })
+    else:
+        # Thanh toán thất bại
+        return render(request, 'home/payment_failed.html')
 
 @login_required
 def payment_history(request):

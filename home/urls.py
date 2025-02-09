@@ -38,6 +38,8 @@ urlpatterns = [
          views.mark_all_notifications_as_read, 
          name='mark_all_notifications_as_read'),
     path('pod/<str:pod_id>/feedback/', views.add_feedback, name='add_feedback'),
+    path('process_payment_method/', views.process_payment_method, name='process_payment_method'),
+    path('payment_return/', views.payment_return, name='payment_return'),
 ]
 
 if settings.DEBUG:
