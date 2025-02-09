@@ -333,21 +333,6 @@ Welcome To WORK CHILL.com
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('select[multiple]').select2({
-            placeholder: "Chọn tiện nghi",
-            allowClear: true
-        });
-
-        $('a[href^="#"]').on('click', function(e) {
-            e.preventDefault();
-            var target = $(this.hash);
-            $('html, body').animate({
-                scrollTop: target.offset().top - 70
-            }, 500);
-        });
-    });
-
 document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -358,11 +343,13 @@ document.addEventListener('DOMContentLoaded', function() {
             center: 'title',
             right: 'dayGridMonth'
         },
-        events: {{ calendar_events|safe }},  // Dữ liệu từ view
+        events: {{ calendar_events|safe }},
         eventClick: function(info) {
             alert(
                 'Phòng: ' + info.event.title + '\n' +
-                'Ngày: ' + info.event.start.toLocaleDateString('vi-VN')
+                'Ngày: ' + info.event.start.toLocaleDateString('vi-VN') + '\n' +
+                'Số giờ: ' + info.event.extendedProps.hours + ' giờ\n' +
+                'Trạng thái: ' + info.event.extendedProps.status
             );
         }
     });
@@ -370,6 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render calendar khi modal được mở
     document.getElementById('calendarModal').addEventListener('shown.bs.modal', function () {
         calendar.render();
+        calendar.updateSize(); // Đảm bảo calendar được render đúng kích thước
     });
 });
 </script>
