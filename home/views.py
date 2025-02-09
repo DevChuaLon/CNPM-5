@@ -180,13 +180,25 @@ def user_profile(request):
 @login_required
 def booking_history(request):
     try:
+        # Lấy tất cả các đặt phòng của user hiện tại
         bookings = PodBooking.objects.filter(
             user=request.user
         ).select_related('pod').order_by('-created_at')
         
+        # Lọc theo trạng thái nếu có
         status = request.GET.get('status')
         if status:
             bookings = bookings.filter(status=status)
+        
+        # Tính toán số giờ và tổng tiền cho mỗi booking
+        for booking in bookings:
+            # Nếu chưa có trường hours, tính từ check_in và check_out
+            if not hasattr(booking, 'hours'):
+                booking.hours = booking.get_hours()  # Bạn cần thêm method này vào model
+            
+            # Nếu chưa có trường total_amount, tính từ giá phòng và số giờ
+            if not hasattr(booking, 'total_amount'):
+                booking.total_amount = booking.pod.pod_price * booking.hours
         
         context = {
             'bookings': bookings,
@@ -202,7 +214,7 @@ def booking_history(request):
         return render(request, 'home/booking_history.html', context)
         
     except Exception as e:
-        messages.error(request, 'Đã xảy ra lỗi khi tải lịch sử đặt phòng')
+        messages.error(request, f'Đã xảy ra lỗi khi tải lịch sử đặt phòng: {str(e)}')
         return redirect('index')
 
 @login_required
@@ -456,16 +468,6 @@ def add_feedback(request, pod_id):
         messages.error(request, f'Lỗi khi gửi feedback: {str(e)}')
         return redirect('get_pod', uid=pod_id)
 
-@login_required
-def payment_history(request):
-    payments = Payment.objects.filter(user=request.user).exclude(status='pending')
-    return render(request, 'home/payment_history.html', {'payments': payments})
-
-@login_required
-def pending_payments(request):
-    pending = Payment.objects.filter(user=request.user, status='pending')
-    return render(request, 'home/pending_payments.html', {'pending_payments': pending})
-
 def create_payment(request, pod_id):
     pod = get_object_or_404(Pod, uid=pod_id)
     if request.method == 'POST':
@@ -550,22 +552,35 @@ def vnpay_return(request):
         ).hexdigest()
         
         if hashValue == vnp_SecureHash:
-            payment_id = inputData.get('vnp_TxnRef')
-            payment = get_object_or_404(Payment, id=payment_id)
-            
-            if inputData.get('vnp_ResponseCode') == '00':
-                payment.status = Payment.COMPLETED
-                payment.save()
-                messages.success(request, 'Thanh toán thành công!')
-            else:
-                payment.status = Payment.FAILED
-                payment.save()
-                messages.error(request, 'Thanh toán thất bại!')
+            booking_info = request.session.get('booking_info')
+            if booking_info:
+                booking = get_object_or_404(PodBooking, uid=booking_info['booking_id'])
                 
-            return redirect('payment_history')
+                if inputData.get('vnp_ResponseCode') == '00':
+                    booking.status = 'active'
+                    booking.save()
+                    
+                    # Tạo thông báo
+                    Notification.objects.create(
+                        user=request.user,
+                        type='booking',
+                        title='Đặt phòng thành công',
+                        message=f'Bạn đã đặt phòng {booking.pod.pod_name} thành công'
+                    )
+                    
+                    messages.success(request, 'Thanh toán thành công!')
+                else:
+                    booking.status = 'cancelled'
+                    booking.save()
+                    messages.error(request, 'Thanh toán thất bại!')
+                
+                # Xóa thông tin booking khỏi session
+                del request.session['booking_info']
+                
+            return redirect('booking_history')
     
     messages.error(request, 'Thanh toán không hợp lệ!')
-    return redirect('payment_history')
+    return redirect('booking_history')
 
 def process_payment(request, pod_id):
     pod = get_object_or_404(Pod, uid=pod_id)
@@ -578,8 +593,21 @@ def process_payment(request, pod_id):
         # Tính tổng tiền
         total_amount = pod.pod_price * hours
         
+        # Tạo booking record
+        booking = PodBooking.objects.create(
+            user=request.user,
+            pod=pod,
+            start_date=booking_date,
+            end_date=booking_date,  # Vì chỉ thuê theo giờ nên start_date = end_date
+            hours=hours,
+            total_amount=total_amount,
+            booking_type='Pre Paid',  # hoặc tùy theo logic của bạn
+            status='active'
+        )
+        
         # Lưu thông tin vào session
         request.session['booking_info'] = {
+            'booking_id': str(booking.uid),
             'pod_id': str(pod.uid),
             'booking_date': booking_date,
             'check_in_time': check_in_time,
@@ -589,19 +617,18 @@ def process_payment(request, pod_id):
         
         # Format ngày để hiển thị đẹp hơn
         try:
-            # Chuyển đổi từ chuỗi YYYY-MM-DD sang đối tượng date
             date_obj = datetime.strptime(booking_date, '%Y-%m-%d').date()
-            # Format lại thành DD/MM/YYYY
             formatted_date = date_obj.strftime('%d/%m/%Y')
         except:
-            formatted_date = booking_date  # Giữ nguyên nếu có lỗi
+            formatted_date = booking_date
         
         context = {
             'pod': pod,
             'booking_date': formatted_date,
             'check_in_time': check_in_time,
             'hours': hours,
-            'total_amount': total_amount
+            'total_amount': total_amount,
+            'booking': booking
         }
         
         return render(request, 'home/payment.html', context)
@@ -645,3 +672,8 @@ def redirect_to_vnpay(request, payment):
 def redirect_to_momo(request, payment):
     # Thêm code xử lý redirect sang MoMo
     pass
+
+@login_required
+def payment_history(request):
+    # Thay vì render trang payment_history, chuyển hướng đến booking_history
+    return redirect('booking_history')

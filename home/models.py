@@ -47,6 +47,8 @@ class PodBooking(BaseModel):
     user = models.ForeignKey(User, related_name="user_bookings", on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
+    hours = models.IntegerField(default=1)  # Thêm trường số giờ
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Thêm trường tổng tiền
     booking_type = models.CharField(max_length=100, choices=(
         ('Pre Paid', 'Pre Paid'),
         ('Post Paid', 'Post Paid')
@@ -59,6 +61,12 @@ class PodBooking(BaseModel):
     
     def __str__(self) -> str:
         return f'{self.pod.pod_name} - {self.user.username}'
+
+    def get_hours(self):
+        """Tính số giờ từ check_in và check_out"""
+        if hasattr(self, 'hours'):
+            return self.hours
+        return getattr(self, 'hours', 1)  # Trả về 1 nếu không có thông tin
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = (
