@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 import uuid
+import datetime
+from googleapiclient.discovery import build
 
 
 
@@ -58,6 +60,7 @@ class PodBooking(BaseModel):
         ('cancelled', 'Cancelled'),
         ('completed', 'Completed')
     ), default='active')
+    calendar_event_id = models.CharField(max_length=255, blank=True, null=True)
     
     def __str__(self) -> str:
         return f'{self.pod.pod_name} - {self.user.username}'
@@ -66,6 +69,64 @@ class PodBooking(BaseModel):
         if hasattr(self, 'hours'):
             return self.hours
         return getattr(self, 'hours', 1)
+
+    def create_calendar_event(self):
+        """Tạo sự kiện trên Google Calendar"""
+        if not self.calendar_event_id and self.status in ['completed', 'active']:
+            try:
+                service = get_calendar_service()
+                event = {
+                    'summary': f'Đặt phòng: {self.pod.pod_name}',
+                    'location': 'Pod Hotel',
+                    'description': f'Số giờ: {self.hours}\nTổng tiền: {self.total_amount} VNĐ',
+                    'start': {
+                        'dateTime': f'{self.start_date}T{self.check_in_time}:00',
+                        'timeZone': 'Asia/Ho_Chi_Minh',
+                    },
+                    'end': {
+                        'dateTime': (datetime.datetime.combine(self.start_date, 
+                                   datetime.datetime.strptime(self.check_in_time, '%H:%M').time()) 
+                                   + datetime.timedelta(hours=self.hours)).strftime('%Y-%m-%dT%H:%M:00'),
+                        'timeZone': 'Asia/Ho_Chi_Minh',
+                    },
+                    'reminders': {
+                        'useDefault': False,
+                        'overrides': [
+                            {'method': 'email', 'minutes': 24 * 60},
+                            {'method': 'popup', 'minutes': 60},
+                        ],
+                    },
+                }
+                
+                created_event = service.events().insert(calendarId='primary', body=event).execute()
+                self.calendar_event_id = created_event['id']
+                self.save()
+                return True
+            except Exception as e:
+                print(f"Lỗi khi tạo sự kiện calendar: {str(e)}")
+                return False
+        return False
+
+    def update_calendar_event(self):
+        """Cập nhật sự kiện trên Google Calendar"""
+        if self.calendar_event_id:
+            try:
+                service = get_calendar_service()
+                event = service.events().get(calendarId='primary', 
+                                          eventId=self.calendar_event_id).execute()
+                
+                event['summary'] = f'Đặt phòng: {self.pod.pod_name}'
+                event['description'] = f'Số giờ: {self.hours}\nTổng tiền: {self.total_amount} VNĐ'
+                event['status'] = 'cancelled' if self.status == 'cancelled' else 'confirmed'
+                
+                updated_event = service.events().update(calendarId='primary',
+                                                      eventId=self.calendar_event_id,
+                                                      body=event).execute()
+                return True
+            except Exception as e:
+                print(f"Lỗi khi cập nhật sự kiện calendar: {str(e)}")
+                return False
+        return False
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = (

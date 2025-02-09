@@ -31,7 +31,7 @@ SECRET_KEY = 'your-secret-key'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -157,3 +157,15 @@ VNPAY_TMN_CODE = 'TH5SMNHX'
 VNPAY_HASH_SECRET_KEY = 'JCOGQPA8WGH8SQA35MTKL70CICU83GRJ'
 VNPAY_PAYMENT_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'
 VNPAY_RETURN_URL = 'http://127.0.0.1:8000/payment/vnpay_return/'  # Đảm bảo có /payment/ ở đầu
+
+# Google Calendar settings
+SITE_URL = 'http://127.0.0.1:8000' if DEBUG else 'https://yourdomain.com'
+CREDENTIALS_DIR = os.path.join(BASE_DIR, 'credentials')
+GOOGLE_CALENDAR_CREDENTIALS_PATH = os.path.join(CREDENTIALS_DIR, 'credentials.json')
+GOOGLE_CALENDAR_TOKEN_PATH = os.path.join(CREDENTIALS_DIR, 'token.pickle')
+GOOGLE_CALENDAR_REDIRECT_URI = f'{SITE_URL}/calendar/callback/'
+
+# Thêm cấu hình cho development
+if DEBUG:
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'

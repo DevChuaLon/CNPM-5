@@ -16,7 +16,15 @@ import urllib.parse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import uuid
-from .utils import generate_vnpay_payment_url
+from .utils import generate_vnpay_payment_url, get_calendar_service, SCOPES
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from django.urls import reverse
+import os
+import pickle
+
+# Thêm dòng này ở đầu file, sau các import
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Cho phép HTTP trong môi trường development
 
 def check_booking(uid, room_count, start_date, end_date):
     try:
@@ -161,7 +169,10 @@ def user_profile(request):
         bookings = PodBooking.objects.filter(user=request.user)
         total_bookings = bookings.count()
         active_bookings = bookings.filter(status='active').count()
-        recent_bookings = bookings.order_by('-created_at')[:5]  # 5 đơn đặt phòng gần nhất
+        recent_bookings = bookings.order_by('-created_at')[:5]
+        
+        # Kiểm tra kết nối Google Calendar
+        is_calendar_connected = os.path.exists(settings.GOOGLE_CALENDAR_TOKEN_PATH)
         
         context = {
             'user': request.user,
@@ -169,13 +180,14 @@ def user_profile(request):
             'total_bookings': total_bookings,
             'active_bookings': active_bookings,
             'recent_bookings': recent_bookings,
-            'today': date.today()
+            'today': date.today(),
+            'is_calendar_connected': is_calendar_connected
         }
         
         return render(request, 'home/profile.html', context)
         
     except Exception as e:
-        messages.error(request, 'Đã xảy ra lỗi khi tải trang profile')
+        messages.error(request, f'Đã xảy ra lỗi khi tải trang profile: {str(e)}')
         return redirect('index')
 
 @login_required
@@ -661,13 +673,14 @@ def payment_return(request):
     vnp_TxnRef = request.GET.get('vnp_TxnRef')
     
     try:
-        # Tìm booking dựa trên vnp_TxnRef
         booking = PodBooking.objects.get(uid=vnp_TxnRef)
         
         if vnp_ResponseCode == "00":
-            # Thanh toán thành công
             booking.status = 'completed'
             booking.save()
+            
+            # Tạo sự kiện trên Google Calendar
+            booking.create_calendar_event()
             
             # Tạo thông báo thanh toán thành công
             Notification.objects.create(
@@ -679,9 +692,11 @@ def payment_return(request):
             
             messages.success(request, 'Thanh toán thành công!')
         else:
-            # Thanh toán thất bại hoặc bị hủy
-            booking.status = 'cancelled'  # Cập nhật trạng thái thành cancelled
+            booking.status = 'cancelled'
             booking.save()
+            
+            # Cập nhật trạng thái sự kiện trên Google Calendar
+            booking.update_calendar_event()
             
             # Tạo thông báo hủy thanh toán
             Notification.objects.create(
@@ -730,3 +745,64 @@ def payment_success(request):
         except PodBooking.DoesNotExist:
             messages.error(request, 'Không tìm thấy thông tin đặt phòng!')
     return redirect('home')
+
+@login_required
+def connect_calendar(request):
+    """View để bắt đầu quá trình kết nối Google Calendar"""
+    try:
+        # Tạo thư mục credentials nếu chưa tồn tại
+        if not os.path.exists(settings.CREDENTIALS_DIR):
+            os.makedirs(settings.CREDENTIALS_DIR)
+            
+        flow = InstalledAppFlow.from_client_secrets_file(
+            settings.GOOGLE_CALENDAR_CREDENTIALS_PATH,
+            SCOPES
+        )
+        # Sử dụng redirect URI từ settings
+        flow.redirect_uri = settings.GOOGLE_CALENDAR_REDIRECT_URI
+        
+        # Thêm tham số để cho phép HTTP trong development
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent'  # Luôn yêu cầu người dùng đồng ý
+        )
+        request.session['state'] = state
+        return redirect(authorization_url)
+    except Exception as e:
+        messages.error(request, f'Lỗi khi kết nối Google Calendar: {str(e)}')
+        return redirect('user_profile')
+
+@login_required
+def calendar_callback(request):
+    """Callback view sau khi người dùng authorize với Google"""
+    try:
+        state = request.session.get('state')
+        if not state:
+            raise ValueError('Không tìm thấy state trong session')
+
+        flow = InstalledAppFlow.from_client_secrets_file(
+            settings.GOOGLE_CALENDAR_CREDENTIALS_PATH,
+            SCOPES,
+            state=state
+        )
+        flow.redirect_uri = settings.GOOGLE_CALENDAR_REDIRECT_URI
+        
+        # Lấy full URL từ request
+        authorization_response = request.build_absolute_uri()
+        # Chuyển từ http sang https nếu cần
+        if settings.DEBUG and authorization_response.startswith('http://'):
+            authorization_response = 'https://' + authorization_response[7:]
+            
+        flow.fetch_token(authorization_response=authorization_response)
+        
+        # Lưu credentials
+        creds = flow.credentials
+        with open(settings.GOOGLE_CALENDAR_TOKEN_PATH, 'wb') as token:
+            pickle.dump(creds, token)
+        
+        messages.success(request, 'Kết nối Google Calendar thành công!')
+    except Exception as e:
+        messages.error(request, f'Lỗi khi xử lý callback: {str(e)}')
+    
+    return redirect('user_profile')

@@ -45,8 +45,64 @@
             </div>
         </div>
 
+        <!-- Thêm card Google Calendar -->
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-calendar"></i> Google Calendar</h4>
+                </div>
+                <div class="card-body">
+                    {% if is_calendar_connected %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Đã kết nối với Google Calendar
+                        </div>
+                        <p>
+                            <i class="fas fa-info-circle"></i> Tất cả các đặt phòng của bạn sẽ được tự động đồng bộ với Google Calendar
+                        </p>
+                        <a href="{% url 'connect_calendar' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-sync"></i> Kết nối lại
+                        </a>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Chưa kết nối với Google Calendar
+                        </div>
+                        <p>
+                            Kết nối với Google Calendar để:
+                            <ul>
+                                <li>Tự động đồng bộ lịch đặt phòng</li>
+                                <li>Nhận thông báo nhắc nhở</li>
+                                <li>Quản lý lịch đặt phòng dễ dàng</li>
+                            </ul>
+                        </p>
+                        <a href="{% url 'connect_calendar' %}" class="btn btn-primary">
+                            <i class="fab fa-google"></i> Kết nối với Google Calendar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card Thống kê -->
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-chart-bar"></i> Thống kê đặt phòng</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h5>Tổng đặt phòng</h5>
+                            <h2 class="text-primary">{{ total_bookings }}</h2>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h5>Đang hoạt động</h5>
+                            <h2 class="text-success">{{ active_bookings }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Đặt phòng gần đây -->
-        <div class="col-md-8">
+        <div class="col-md-4">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Đặt phòng gần đây</h4>
@@ -140,33 +196,35 @@
     </div>
 </div>
 
-<!-- Thêm Font Awesome và CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- Thêm CSS -->
 <style>
     .card {
-        margin-bottom: 20px;
         border: none;
+        margin-bottom: 20px;
+    }
+    .card-header {
+        border-bottom: none;
     }
     .shadow {
         box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15) !important;
     }
-    .card-header {
-        background-color: #007bff !important;
-        border-bottom: 0;
+    .alert {
+        margin-bottom: 1rem;
+        border: none;
+        border-radius: 0.5rem;
     }
-    .badge {
-        font-size: 0.875rem;
-        padding: 0.5em 0.75em;
+    .btn-outline-primary:hover {
+        color: #fff;
     }
-    .text-muted {
-        color: #6c757d !important;
+    ul {
+        padding-left: 1.2rem;
     }
-    .btn-light {
-        background-color: rgba(255,255,255,0.15);
-        border-color: transparent;
-    }
-    .btn-light:hover {
-        background-color: rgba(255,255,255,0.25);
+    .card-header h4 {
+        font-size: 1.1rem;
+        margin: 0;
     }
 </style>
+
+<!-- Thêm Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 {% endblock %}

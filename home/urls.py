@@ -43,6 +43,8 @@ urlpatterns = [
     path('payment/vnpay_return/', views.payment_return, name='payment_return'),
     path('payment/success/', views.payment_success, name='payment_success'),
     path('payment/history/', views.payment_history, name='payment_history'),
+    path('calendar/connect/', views.connect_calendar, name='connect_calendar'),
+    path('calendar/callback/', views.calendar_callback, name='calendar_callback'),
 ]
 
 if settings.DEBUG:
