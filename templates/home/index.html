@@ -180,7 +180,7 @@ Welcome To WORK CHILL.com
                                    value="{{ search|default:'' }}" placeholder="Tên phòng làm việc...">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Tiện nghi</label>
+                            <label class="form-label">Loại Phòng</label>
                             <select name="selectAmenity" class="form-select" multiple>
                                 {% for amenity in amenities %}
                                 <option value="{{ amenity.amenity_name }}" 
@@ -201,16 +201,6 @@ Welcome To WORK CHILL.com
                                     Giá giảm dần
                                 </option>
                             </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Check-in</label>
-                            <input type="date" name="startDate" class="form-control" 
-                                   min="{{ today }}" value="{{ start_date|default:'' }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Check-out</label>
-                            <input type="date" name="endDate" class="form-control" 
-                                   min="{{ today }}" value="{{ end_date|default:'' }}">
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary">

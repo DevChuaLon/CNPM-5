@@ -1,0 +1,4 @@
+cài môi trường.
+djangovenv\Scripts\activate
+cd CNPM-5
+python manage.py runserver
