@@ -1,6 +1,7 @@
 {% extends 'home/base.html' %}
 {% load coustom_tags %}
 {% load custom_filters %}
+{% load static %}
 {% block css %}
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
@@ -240,15 +241,21 @@ Welcome To WORK CHILL.com
             <div class="row">
                 {% if pods %}
                     {% for pod in pods %}
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 hotel-card">
-                            {% if pod.pod_images.first %}
-                            <img src="{{ pod.pod_images.first.images.url }}" class="card-img-top" alt="{{ pod.pod_name }}">
-                            {% else %}
-                            <img src="https://placehold.co/600x400?text=No+Image" 
-                                 class="card-img-top" alt="{{ pod.pod_name }}"
-                                 style="height: 200px; object-fit: cover;">
-                            {% endif %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="image-container" style="height: 250px; overflow: hidden;">
+                                {% if pod.pod_images.first %}
+                                    <img src="{{ pod.pod_images.first.images.url }}" 
+                                         class="card-img-top w-100 h-100"
+                                         alt="{{ pod.pod_name }}"
+                                         style="object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'images/default-pod.jpg' %}" 
+                                         class="card-img-top w-100 h-100"
+                                         alt="{{ pod.pod_name }}"
+                                         style="object-fit: cover;">
+                                {% endif %}
+                            </div>
                             <div class="card-body">
                                 <h5 class="card-title">{{ pod.pod_name }}</h5>
                                 <p class="card-text">{{ pod.description|truncatewords:20 }}</p>
