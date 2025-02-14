@@ -119,10 +119,9 @@ def index(request):
         selected_amenities = request.GET.getlist('selectAmenity')
         sort_by = request.GET.get('sortSelect')
         search = request.GET.get('searchInput')
-        start_date = request.GET.get('startDate')
-        end_date = request.GET.get('endDate')
         
-        if selected_amenities:
+        # Sửa lại phần này - Chỉ lọc nếu không phải "Tất cả loại phòng" và có chọn amenity
+        if selected_amenities and selected_amenities[0] != "Tất cả loại phòng":
             pods = pods.filter(amenities__amenity_name__in=selected_amenities).distinct()
         
         if search:
@@ -137,7 +136,7 @@ def index(request):
             pods = pods.order_by('-pod_price')
             
         # Thêm phân trang
-        paginator = Paginator(pods, 6)  # 6 khách sạn mỗi trang
+        paginator = Paginator(pods, 6)  # 6 phòng mỗi trang
         page = request.GET.get('page', 1)
         pods = paginator.get_page(page)
         
@@ -165,8 +164,6 @@ def index(request):
             'selected_amenities': selected_amenities,
             'sort_by': sort_by,
             'search': search,
-            'start_date': start_date,
-            'end_date': end_date,
             'today': date.today().strftime('%Y-%m-%d'),
             'calendar_events': json.dumps(calendar_events)
         }

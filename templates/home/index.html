@@ -198,7 +198,7 @@ Welcome To WORK CHILL.com
                         <div class="col-md-3">
                             <label class="form-label">Loại Phòng</label>
                             <select name="selectAmenity" class="form-select">
-                                <option value="">Tất cả loại phòng</option>
+                                <option value="Tất cả loại phòng">Tất cả loại phòng</option>
                                 {% for amenity in amenities %}
                                 <option value="{{ amenity.amenity_name }}" 
                                         {% if amenity.amenity_name in selected_amenities %}selected{% endif %}>
