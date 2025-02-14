@@ -222,13 +222,15 @@ def booking_history(request):
         
         # Tính toán số giờ và tổng tiền cho mỗi booking
         for booking in bookings:
-            # Nếu chưa có trường hours, tính từ check_in và check_out
             if not hasattr(booking, 'hours'):
-                booking.hours = booking.get_hours()  # Bạn cần thêm method này vào model
+                booking.hours = booking.get_hours()
             
-            # Nếu chưa có trường total_amount, tính từ giá phòng và số giờ
             if not hasattr(booking, 'total_amount'):
                 booking.total_amount = booking.pod.pod_price * booking.hours
+
+            # Đặt giờ mặc định nếu không có
+            if not hasattr(booking, 'check_in_time'):
+                booking.check_in_time = '14:00'
         
         context = {
             'bookings': bookings,
@@ -394,6 +396,8 @@ def book_pod(request, uid):
             pod = Pod.objects.get(uid=uid)
             start_date = request.POST.get('start_date')
             end_date = request.POST.get('end_date')
+            check_in_time = request.POST.get('check_in_time', '14:00')
+            hours = int(request.POST.get('hours', 1))
             
             # Tạo booking
             booking = PodBooking.objects.create(
@@ -401,6 +405,8 @@ def book_pod(request, uid):
                 pod=pod,
                 start_date=start_date,
                 end_date=end_date,
+                check_in_time=check_in_time,
+                hours=hours,
                 status='active'
             )
             
@@ -409,7 +415,7 @@ def book_pod(request, uid):
                 user=request.user,
                 type='booking',
                 title='Đặt phòng thành công',
-                message=f'Bạn đã đặt phòng {pod.pod_name} thành công từ {start_date} đến {end_date}'
+                message=f'Bạn đã đặt phòng {pod.pod_name} thành công từ {start_date} lúc {check_in_time}'
             )
             
             messages.success(request, 'Đặt phòng thành công!')
@@ -617,22 +623,23 @@ def process_payment(request, pod_id):
     
     if request.method == 'POST':
         booking_date = request.POST.get('bookingDate')
-        check_in_time = request.POST.get('checkInTime')
+        check_in_time = request.POST.get('checkInTime')  # Lấy thời gian từ form
         hours = int(request.POST.get('hours', 1))
         
         # Tính tổng tiền
         total_amount = pod.pod_price * hours
         
-        # Tạo booking record với PodBooking thay vì Booking
+        # Tạo booking record với thời gian nhận phòng đã chọn
         booking = PodBooking.objects.create(
             user=request.user,
             pod=pod,
             start_date=booking_date,
             end_date=booking_date,
+            check_in_time=check_in_time,  # Lưu thời gian đã chọn
             hours=hours,
             total_amount=total_amount,
             booking_type='Pre Paid',
-            status='pending'  # Đặt status là pending khi mới tạo
+            status='pending'
         )
         
         # Lưu booking_id vào session
@@ -648,7 +655,7 @@ def process_payment(request, pod_id):
         context = {
             'pod': pod,
             'booking_date': formatted_date,
-            'check_in_time': check_in_time,
+            'check_in_time': check_in_time,  # Truyền thời gian vào context
             'hours': hours,
             'total_amount': total_amount,
             'booking': booking

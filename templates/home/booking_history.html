@@ -41,6 +41,10 @@
                             <strong>Ngày nhận phòng:</strong> {{ booking.start_date|date:"d/m/Y" }}
                         </p>
                         <p>
+                            <i class="fas fa-clock text-info"></i>
+                            <strong>Giờ nhận phòng:</strong> {{ booking.check_in_time }}
+                        </p>
+                        <p>
                             <i class="fas fa-clock text-warning"></i>
                             <strong>Số giờ thuê:</strong> {{ booking.hours }} giờ
                         </p>

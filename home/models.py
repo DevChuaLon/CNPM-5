@@ -61,6 +61,7 @@ class PodBooking(BaseModel):
         ('completed', 'Completed')
     ), default='active')
     calendar_event_id = models.CharField(max_length=255, blank=True, null=True)
+    check_in_time = models.CharField(max_length=5, default='14:00')
     
     def __str__(self) -> str:
         return f'{self.pod.pod_name} - {self.user.username}'
