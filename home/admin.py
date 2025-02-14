@@ -8,8 +8,6 @@ admin.site.register(PodBooking)
 admin.site.register(Amenities)
 admin.site.register(PodImages)
 
-# Hoặc có thể đăng ký cùng lúc như sau:
-# admin.site.register((Hotel, HotelBooking, Amenities, HotelImages))
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
