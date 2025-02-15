@@ -207,40 +207,6 @@ class Feedback(models.Model):
     def __str__(self):
         return f'Feedback của {self.user.username} về {self.pod.pod_name}'
 
-class Payment(models.Model):
-    PAYMENT_STATUS = (
-        ('pending', 'Đang chờ'),
-        ('completed', 'Thành công'), 
-        ('failed', 'Thất bại')
-    )
-    
-    PAYMENT_METHODS = (
-        ('vnpay', 'VNPay'),
-    )
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Người dùng')
-    pod = models.ForeignKey('Pod', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments', verbose_name='Phòng')
-    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Số tiền')
-    description = models.TextField(verbose_name='Mô tả', blank=True)
-    payment_method = models.CharField(
-        max_length=20, 
-        choices=PAYMENT_METHODS, 
-        default='vnpay',
-        verbose_name='Phương thức thanh toán'
-    )
-    transaction_id = models.CharField(max_length=100, blank=True, null=True, verbose_name='Mã giao dịch')
-    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending', verbose_name='Trạng thái')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Thời gian tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Cập nhật lần cuối')
-
-    class Meta:
-        verbose_name = 'Payments'
-        verbose_name_plural = 'Payments'
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.user.username} - {self.amount} - {self.get_status_display()}"
-
 class Booking(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
