@@ -84,8 +84,12 @@ WSGI_APPLICATION = 'podProject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'podproject_db'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
 
@@ -114,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
 USE_I18N = True
 
@@ -156,7 +160,7 @@ LOGIN_REDIRECT_URL = 'index'  # URL sau khi đăng nhập thành công
 VNPAY_TMN_CODE = 'TH5SMNHX'
 VNPAY_HASH_SECRET_KEY = 'JCOGQPA8WGH8SQA35MTKL70CICU83GRJ'
 VNPAY_PAYMENT_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'
-VNPAY_RETURN_URL = 'http://127.0.0.1:8000/payment/vnpay_return/'  # Đảm bảo có /payment/ ở đầu
+VNPAY_RETURN_URL = 'http://127.0.0.1:8000/payment/vnpay_return/'
 
 # Google Calendar settings
 SITE_URL = 'http://127.0.0.1:8000' if DEBUG else 'https://yourdomain.com'
