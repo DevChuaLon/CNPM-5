@@ -25,8 +25,32 @@ class FeedbackAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'amount', 'description', 'status', 'created_at')
-    list_filter = ('status', 'created_at')
-    search_fields = ('user__username', 'description')
+    list_display = ('user', 'amount', 'payment_method', 'status', 'transaction_id', 'created_at', 'pod', 'description')
+    list_filter = ('status', 'payment_method', 'created_at')
+    search_fields = ('user__username', 'transaction_id', 'description')
+    readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Thông tin cơ bản', {
+            'fields': ('user', 'pod', 'amount', 'description')
+        }),
+        ('Chi tiết thanh toán', {
+            'fields': ('payment_method', 'transaction_id', 'status')
+        }),
+        ('Thông tin thời gian', {
+            'fields': ('created_at', 'updated_at')
+        })
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # Editing an existing object
+            return self.readonly_fields + ('user', 'pod', 'amount', 'transaction_id')
+        return self.readonly_fields
+
+    def has_add_permission(self, request):
+        return False # Không cho phép thêm payment trực tiếp từ admin
+
+    def has_delete_permission(self, request, obj=None):
+        return False # Không cho phép xóa payment
 
