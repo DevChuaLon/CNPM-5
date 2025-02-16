@@ -124,6 +124,27 @@
         max-height: 600px;
         overflow-y: auto;
     }
+
+    /* Thêm style cho calendar */
+    .fc-event {
+        border-radius: 3px;
+        padding: 3px;
+        margin: 2px 0;
+        cursor: pointer;
+    }
+    
+    .fc-daygrid-event {
+        white-space: normal !important;
+        align-items: center;
+    }
+    
+    .fc-header-toolbar {
+        margin-bottom: 1.5em;
+    }
+    
+    .fc-day-today {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
 </style>
 
 {% endblock css %}
@@ -337,51 +358,53 @@ Welcome To WORK CHILL.com
     </footer>
 </main>
 
-{% block js %}
-<!-- Đảm bảo các script cần thiết đã được load -->
+<!-- Đặt script vào cuối block content -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Khởi tạo calendar ngay khi trang load
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        locale: 'vi',
-        initialView: 'dayGridMonth',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth'
-        },
-        events: {{ calendar_events|safe }},
-        eventClick: function(info) {
-            alert(
-                'Phòng: ' + info.event.title + '\n' +
-                'Ngày: ' + info.event.start.toLocaleDateString('vi-VN') + '\n' +
-                'Số giờ: ' + info.event.extendedProps.hours + ' giờ'
-            );
-        }
-    });
-
-    // Xử lý sự kiện khi modal được mở
-    $('#calendarModal').on('shown.bs.modal', function () {
-        calendar.render();
-        calendar.updateSize();
-    });
-
-    // Đảm bảo calendar được render khi modal mở
-    var modalButton = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#calendarModal"]');
-    if (modalButton) {
-        modalButton.addEventListener('click', function() {
-            setTimeout(function() {
-                calendar.render();
-                calendar.updateSize();
-            }, 100);
+    $(document).ready(function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'vi',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: {{ calendar_events|safe }},
+            eventClick: function(info) {
+                alert(
+                    'Phòng: ' + info.event.title + '\n' +
+                    'Ngày: ' + info.event.start.toLocaleDateString('vi-VN') + '\n' +
+                    'Số giờ: ' + info.event.extendedProps.hours + ' giờ'
+                );
+            },
+            eventDidMount: function(info) {
+                // Thêm tooltip cho mỗi event
+                $(info.el).tooltip({
+                    title: info.event.title + ' - ' + info.event.extendedProps.hours + ' giờ',
+                    placement: 'top',
+                    trigger: 'hover',
+                    container: 'body'
+                });
+            },
+            dayMaxEvents: true, // Cho phép hiển thị "more" khi có nhiều sự kiện
+            displayEventTime: false, // Không hiển thị thời gian trong event
+            height: 'auto', // Tự động điều chỉnh chiều cao
         });
-    }
-});
+
+        // Xử lý sự kiện khi modal được mở
+        $('#calendarModal').on('shown.bs.modal', function () {
+            calendar.render();
+            calendar.updateSize();
+        });
+
+        // Render calendar ngay khi trang được load
+        calendar.render();
+    });
 </script>
-{% endblock %}
+
 {% endblock content %}

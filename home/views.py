@@ -142,23 +142,23 @@ def index(request):
         page = request.GET.get('page', 1)
         pods = paginator.get_page(page)
         
-        calendar_events = []
+        # Lấy tất cả booking của user hiện tại
         if request.user.is_authenticated:
-            bookings = PodBooking.objects.filter(
-                user=request.user,
-                status='active'
-            ).select_related('pod')
+            bookings = PodBooking.objects.filter(user=request.user)
+            calendar_events = []
             
             for booking in bookings:
-                calendar_events.append({
-                    'title': booking.pod.pod_name,
-                    'start': booking.start_date.strftime('%Y-%m-%d'),
-                    'backgroundColor': '#198754',
-                    'borderColor': '#198754',
-                    'extendedProps': {
-                        'hours': booking.hours
-                    }
-                })
+                event = {
+                    'title': booking.pod.pod_name,  # Tên phòng
+                    'start': booking.start_date.strftime('%Y-%m-%d'),  # Ngày đặt
+                    'hours': booking.hours,  # Số giờ đặt
+                    'backgroundColor': '#28a745',  # Màu nền cho event
+                    'borderColor': '#28a745',  # Màu viền
+                    'textColor': '#ffffff'  # Màu chữ
+                }
+                calendar_events.append(event)
+        else:
+            calendar_events = []
         
         context = {
             'pods': pods,

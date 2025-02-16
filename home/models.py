@@ -72,37 +72,40 @@ class PodBooking(BaseModel):
         return getattr(self, 'hours', 1)
 
     def create_calendar_event(self):
-        """Tạo sự kiện trên Google Calendar"""
         if not self.calendar_event_id and self.status in ['completed', 'active']:
             try:
                 service = get_calendar_service()
+                # Tạo tiêu đề ngắn gọn và rõ ràng
+                summary = f'[POD] {self.pod.pod_name} - {self.hours}h'
+                
+                # Tạo mô tả chi tiết
+                description = f"""
+                🏠 Phòng: {self.pod.pod_name}
+                ⏰ Thời gian: {self.hours} giờ
+                💰 Tổng tiền: {self.total_amount:,.0f} VNĐ
+                📋 Trạng thái: {self.get_status_display()}
+                """
+                
                 event = {
-                    'summary': f'Đặt phòng: {self.pod.pod_name}',
-                    'location': 'Pod Hotel',
-                    'description': f'Số giờ: {self.hours}\nTổng tiền: {self.total_amount} VNĐ',
+                    'summary': summary,
+                    'location': self.pod.address,
+                    'description': description,
                     'start': {
-                        'dateTime': f'{self.start_date}T{self.check_in_time}:00',
+                        'dateTime': f'{self.start_date}T{self.check_in_time}',
                         'timeZone': 'Asia/Ho_Chi_Minh',
                     },
                     'end': {
-                        'dateTime': (datetime.datetime.combine(self.start_date, 
-                                   datetime.datetime.strptime(self.check_in_time, '%H:%M').time()) 
-                                   + datetime.timedelta(hours=self.hours)).strftime('%Y-%m-%dT%H:%M:00'),
-                        'timeZone': 'Asia/Ho_Chi_Minh',
+                        'dateTime': self.get_end_datetime().isoformat(),
+                        'timeZone': 'Asia/Ho_Chi_Minh', 
                     },
-                    'reminders': {
-                        'useDefault': False,
-                        'overrides': [
-                            {'method': 'email', 'minutes': 24 * 60},
-                            {'method': 'popup', 'minutes': 60},
-                        ],
-                    },
+                    'colorId': '1'  # Màu xanh dương nhạt
                 }
                 
-                created_event = service.events().insert(calendarId='primary', body=event).execute()
-                self.calendar_event_id = created_event['id']
+                event = service.events().insert(calendarId='primary', body=event).execute()
+                self.calendar_event_id = event['id']
                 self.save()
                 return True
+                
             except Exception as e:
                 print(f"Lỗi khi tạo sự kiện calendar: {str(e)}")
                 return False
