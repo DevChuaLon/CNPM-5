@@ -14,7 +14,7 @@ Hệ thống đặt phòng Pod tích hợp thanh toán VNPay và Google Calendar
 
 ### 1. Clone repository
 bash
-git clone <[repository-url](https://github.com/DevChuaLon/CNPM-5.git)>
+git clone [<[repository-url](https://github.com/DevChuaLon/CNPM-5.git)>](https://github.com/DevChuaLon/CNPM-5.git)
 ### 2. Tạo và kích hoạt môi trường ảo
 - Tạo môi trường ảo
 python -m venv venv
